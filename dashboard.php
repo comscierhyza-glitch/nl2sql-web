@@ -17,8 +17,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $username = $isLoggedIn ? $_SESSION['username'] : 'Guest User';
 $userRole = 'user';
 
-// 📌 DINHI GIDUGANG: Guest Mode Schema Guard
-// Kon Guest (dili logged in), sigurohon nga walay active schema nga mabilin
+// Guest Mode Schema Guard
 if (!$isLoggedIn) {
     unset($_SESSION['schema']);
     unset($_SESSION['schema_name']);
@@ -1255,9 +1254,6 @@ if ($isLoggedIn && isset($conn)) {
         // ==========================================
         // 1. TOGGLE EDIT (WITH PLACEHOLDER GUARD)
         // ==========================================
-        // ==========================================
-        // 1. TOGGLE EDIT (WITH COMPLETE PLACEHOLDER GUARD)
-        // ==========================================
         function toggleEdit() {
             const sqlOutput = document.getElementById('sqlOutput');
             const editBtn = document.getElementById('editBtn');
@@ -1266,7 +1262,7 @@ if ($isLoggedIn && isset($conn)) {
 
             const sqlText = getSQLContent().toLowerCase();
 
-            // Susiha kon placeholder, loading, o error pa ang anaa sa kahon
+            // Validate that the output is not empty, a placeholder, or an error
             const isInvalidState = !sqlText ||
                 sqlText.includes('appear here') ||
                 sqlText.includes('your generated sql') ||
@@ -1275,11 +1271,11 @@ if ($isLoggedIn && isset($conn)) {
                 sqlText.includes('error:');
 
             if (isInvalidState) {
-                alert('Walay valid nga generated SQL nga ma-edit!');
+                alert('No valid generated SQL available to edit.');
                 return;
             }
 
-            // Kon Textarea
+            // Handle Textarea element
             if (sqlOutput.tagName.toLowerCase() === 'textarea') {
                 const isReadonly = sqlOutput.hasAttribute('readonly');
                 if (isReadonly) {
@@ -1295,7 +1291,7 @@ if ($isLoggedIn && isset($conn)) {
                     editBtn.title = "Edit SQL";
                 }
             } else {
-                // Kon <pre> o <div> tag
+                // Handle Pre/Div elements
                 const isEditable = sqlOutput.getAttribute('contenteditable') === 'true';
                 if (!isEditable) {
                     sqlOutput.setAttribute('contenteditable', 'true');
@@ -1314,31 +1310,31 @@ if ($isLoggedIn && isset($conn)) {
         }
 
         // ==========================================
-        // 2. UPGRADED COPY FUNCTION
+        // 2. COPY SQL FUNCTION
         // ==========================================
         function copySQL() {
             const sqlText = getSQLContent();
 
-            if (!sqlText || sqlText.includes('Your generated SQL') || sqlText.includes('ERROR:')) {
-                alert('Walay valid nga SQL query nga ma-copy!');
+            if (!sqlText || sqlText.includes('appear here') || sqlText.includes('Your generated SQL') || sqlText.includes('ERROR:')) {
+                alert('No valid SQL query available to copy.');
                 return;
             }
 
             navigator.clipboard.writeText(sqlText).then(() => {
-                alert('✅ SQL query copied to clipboard!');
-            }).catch(err => {
-                alert('✅ SQL query copied!');
+                alert('SQL query successfully copied to clipboard!');
+            }).catch(() => {
+                alert('SQL query copied to clipboard!');
             });
         }
 
         // ==========================================
-        // 3. UPGRADED DOWNLOAD FUNCTION
+        // 3. DOWNLOAD SQL FUNCTION
         // ==========================================
         function downloadSQL() {
             const sqlText = getSQLContent();
 
-            if (!sqlText || sqlText.includes('Your generated SQL') || sqlText.includes('ERROR:')) {
-                alert('Walay valid nga SQL query nga ma-download!');
+            if (!sqlText || sqlText.includes('appear here') || sqlText.includes('Your generated SQL') || sqlText.includes('ERROR:')) {
+                alert('No valid SQL query available to download.');
                 return;
             }
 
