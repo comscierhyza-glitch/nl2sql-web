@@ -1255,23 +1255,34 @@ if ($isLoggedIn && isset($conn)) {
         // ==========================================
         // 1. TOGGLE EDIT (WITH PLACEHOLDER GUARD)
         // ==========================================
+        // ==========================================
+        // 1. TOGGLE EDIT (WITH COMPLETE PLACEHOLDER GUARD)
+        // ==========================================
         function toggleEdit() {
             const sqlOutput = document.getElementById('sqlOutput');
             const editBtn = document.getElementById('editBtn');
 
             if (!sqlOutput || !editBtn) return;
 
-            const sqlText = getSQLContent();
+            const sqlText = getSQLContent().toLowerCase();
+
+            // Susiha kon placeholder, loading, o error pa ang anaa sa kahon
+            const isInvalidState = !sqlText ||
+                sqlText.includes('appear here') ||
+                sqlText.includes('your generated sql') ||
+                sqlText.includes('awaiting new') ||
+                sqlText.includes('translating') ||
+                sqlText.includes('error:');
+
+            if (isInvalidState) {
+                alert('Walay valid nga generated SQL nga ma-edit!');
+                return;
+            }
 
             // Kon Textarea
             if (sqlOutput.tagName.toLowerCase() === 'textarea') {
                 const isReadonly = sqlOutput.hasAttribute('readonly');
                 if (isReadonly) {
-                    // Dili tugotan kon placeholder, loading, o error pa ang sulod
-                    if (!sqlText || sqlText.includes('Awaiting new') || sqlText.includes('Translating') || sqlText.includes('ERROR:')) {
-                        alert('Walay valid nga generated SQL nga ma-edit!');
-                        return;
-                    }
                     sqlOutput.removeAttribute('readonly');
                     sqlOutput.style.border = '2px solid #2563eb';
                     sqlOutput.focus();
@@ -1287,11 +1298,6 @@ if ($isLoggedIn && isset($conn)) {
                 // Kon <pre> o <div> tag
                 const isEditable = sqlOutput.getAttribute('contenteditable') === 'true';
                 if (!isEditable) {
-                    // Dili tugotan kon placeholder, loading, o error pa ang sulod
-                    if (!sqlText || sqlText.includes('Awaiting new') || sqlText.includes('Translating') || sqlText.includes('ERROR:')) {
-                        alert('Walay valid nga generated SQL nga ma-edit!');
-                        return;
-                    }
                     sqlOutput.setAttribute('contenteditable', 'true');
                     sqlOutput.style.border = '2px solid #2563eb';
                     sqlOutput.style.outline = 'none';
