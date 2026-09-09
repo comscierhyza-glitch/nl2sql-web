@@ -253,16 +253,24 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
         // =========================================================================
         if (isset($_POST['ajax'])) {
             header('Content-Type: application/json');
+
+            // Retrieve the newly inserted query ID
+            $historyId = 0;
+            if (isset($pdo)) {
+                $historyId = $pdo->lastInsertId();
+            } elseif (isset($conn)) {
+                $historyId = method_exists($conn, 'lastInsertId') ? $conn->lastInsertId() : ($conn->insert_id ?? 0);
+            }
+
             echo json_encode([
-                'success'     => true,
-                'sql'         => $sql,
-                'command'     => $sql_command,
-                'time'        => $executionTime,
-                'explanation' => $autoExplanation,
-                'complexity'  => $compLevel,
-                'score'       => $compScore,
-                'badge_color' => $badgeColor,
-                'is_valid'    => $isValid
+                'success'      => true,
+                'sql'          => $sql,
+                'command'      => $sql_command,
+                'time'         => $executionTime,
+                'explanation'  => $autoExplanation,
+                'is_valid'     => $isValid,
+                'history_id'   => $historyId,
+                'user_prompt'  => trim($_POST['nl_query'] ?? $_POST['query'] ?? '')
             ]);
             exit();
         }
@@ -1003,38 +1011,45 @@ if ($isLoggedIn && isset($conn)) {
             <div class="recent-history-box" style="padding-bottom: 130px;">
                 <?php if ($isLoggedIn): ?>
                     <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 10px;">Recent History</h4>
-                    <?php if (!empty($dbHistory)): ?>
-                        <?php foreach ($dbHistory as $h): ?>
-                            <?php
-                            $displayLabel = !empty($h['title']) ? $h['title'] : $h['natural_language'];
-                            ?>
-                            <div style="position: relative; margin-bottom: 8px;" class="history-item-wrapper">
-                                <a href="dashboard.php?history_id=<?= $h['id'] ?>" style="text-decoration: none; display: block; color: inherit; padding-right: 28px;">
-                                    <div class="history-mini-item" title="Original: <?= htmlspecialchars($h["natural_language"]) ?>" style="margin-bottom: 0;">
-                                        <i class="far fa-clock"></i> <?= htmlspecialchars($displayLabel) ?>
+
+                    <!-- 👉 GIDUGANG KINI NGA WRAPPER NGA NAAY ID -->
+                    <div id="recentHistoryContainer">
+                        <?php if (!empty($dbHistory)): ?>
+                            <?php foreach ($dbHistory as $h): ?>
+                                <?php
+                                $displayLabel = !empty($h['title']) ? $h['title'] : $h['natural_language'];
+                                ?>
+                                <div style="position: relative; margin-bottom: 8px;" class="history-item-wrapper">
+                                    <a href="dashboard.php?history_id=<?= $h['id'] ?>" style="text-decoration: none; display: block; color: inherit; padding-right: 28px;">
+                                        <div class="history-mini-item" title="Original: <?= htmlspecialchars($h["natural_language"]) ?>" style="margin-bottom: 0;">
+                                            <i class="far fa-clock"></i> <?= htmlspecialchars($displayLabel) ?>
+                                        </div>
+                                    </a>
+
+                                    <!-- 3-DOTS BUTTON -->
+                                    <button type="button" onclick="toggleHistoryMenu(event, <?= $h['id'] ?>)" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 6px; font-size: 0.85rem; border-radius: 4px;">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+
+                                    <!-- DROPDOWN MENU -->
+                                    <div id="menu-<?= $h['id'] ?>" class="history-dropdown-menu" style="display: none; position: absolute; right: 5px; top: 30px; z-index: 9999; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15); width: 120px; padding: 4px 0;">
+                                        <a href="#" onclick="renameHistory(event, <?= $h['id'] ?>, '<?= htmlspecialchars(addslashes($displayLabel)) ?>')" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                            <i class="fas fa-edit" style="color: #2563eb;"></i> Rename
+                                        </a>
+
+                                        <a href="delete_history.php?id=<?= $h['id'] ?>" onclick="return confirm('Are you sure you want to delete this query history?')" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: #ef4444; text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </a>
                                     </div>
-                                </a>
-
-                                <!-- 3-DOTS BUTTON -->
-                                <button type="button" onclick="toggleHistoryMenu(event, <?= $h['id'] ?>)" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 6px; font-size: 0.85rem; border-radius: 4px;">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-
-                                <!-- DROPDOWN MENU -->
-                                <div id="menu-<?= $h['id'] ?>" class="history-dropdown-menu" style="display: none; position: absolute; right: 5px; top: 30px; z-index: 9999; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15); width: 120px; padding: 4px 0;">
-                                    <a href="#" onclick="renameHistory(event, <?= $h['id'] ?>, '<?= htmlspecialchars(addslashes($displayLabel)) ?>')" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                                        <i class="fas fa-edit" style="color: #2563eb;"></i> Rename
-                                    </a>
-
-                                    <a href="delete_history.php?id=<?= $h['id'] ?>" onclick="return confirm('Are you sure you want to delete this query history?')" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: #ef4444; text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </a>
                                 </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">No recent queries.</p>
-                    <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <!-- 👉 GIDUGANG ANG id="noHistoryMsg" -->
+                            <p id="noHistoryMsg" style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">No recent queries.</p>
+                        <?php endif; ?>
+                    </div>
+                    <!-- 👉 SERADO SA CONTAINER -->
+
                 <?php endif; ?>
             </div>
         </div>
@@ -1598,7 +1613,7 @@ if ($isLoggedIn && isset($conn)) {
                     })
                     .then(response => response.json())
                     .then(data => {
-                        // 1. I-update ang SQL Output Box
+                        // 1. Update SQL Output Box
                         if (data.sql && sqlOutput) {
                             if (sqlOutput.tagName.toLowerCase() === 'textarea') {
                                 sqlOutput.value = data.sql;
@@ -1610,19 +1625,19 @@ if ($isLoggedIn && isset($conn)) {
                             }
                         }
 
-                        // 2. I-update ang "What It Means" text
+                        // 2. Update Explanation text
                         const expElem = document.getElementById('queryExplanationText');
                         if (expElem && data.explanation) {
                             expElem.innerHTML = data.explanation;
                         }
 
-                        // 3. Ipakita ang Metrics Row container
+                        // 3. Show Metrics Row container
                         const metricsRow = document.getElementById('queryMetricsRow');
                         if (metricsRow) {
                             metricsRow.style.display = 'flex';
                         }
 
-                        // 1. I-update ang Operation badge
+                        // 4. Update Operation badge
                         const badgeOp = document.getElementById('badgeOperation');
                         if (badgeOp) {
                             badgeOp.textContent = data.command;
@@ -1630,7 +1645,7 @@ if ($isLoggedIn && isset($conn)) {
                             badgeOp.style.backgroundColor = data.is_valid ? '#eff6ff' : '#f1f5f9';
                         }
 
-                        // 3. I-update ang Status badge (Dynamic: Green o Red)
+                        // 5. Update Status badge
                         const badgeStatus = document.getElementById('badgeStatus');
                         if (badgeStatus) {
                             if (data.is_valid) {
@@ -1641,7 +1656,8 @@ if ($isLoggedIn && isset($conn)) {
                                 badgeStatus.style.color = '#ef4444';
                             }
                         }
-                        // Kuhaan og 1 ang guest counter sa screen
+
+                        // 6. Decrement Guest Counter if active
                         const counterElem = document.getElementById('guest-remaining-count');
                         if (counterElem) {
                             let count = parseInt(counterElem.innerText);
@@ -1649,11 +1665,48 @@ if ($isLoggedIn && isset($conn)) {
                                 counterElem.innerText = count - 1;
                             }
                         }
-                        // Enable Copy and Download buttons
+
+                        // 7. Enable Copy and Download buttons
                         const copyBtn = document.getElementById('copyBtn');
                         const downloadBtn = document.getElementById('downloadBtn');
                         if (copyBtn) copyBtn.removeAttribute('disabled');
                         if (downloadBtn) downloadBtn.removeAttribute('disabled');
+
+                        // 8. Prepend newly generated query to Sidebar History
+                        const historyContainer = document.getElementById('recentHistoryContainer');
+                        if (historyContainer && data.history_id) {
+                            // Remove empty placeholder message if present
+                            const emptyMsg = document.getElementById('noHistoryMsg');
+                            if (emptyMsg) emptyMsg.remove();
+
+                            const rawPrompt = data.user_prompt || (document.getElementById('nlInputBox') ? document.getElementById('nlInputBox').value : 'New Query');
+                            const escapedPrompt = rawPrompt.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'history-item-wrapper';
+                            wrapper.style.cssText = 'position: relative; margin-bottom: 8px;';
+
+                            wrapper.innerHTML = `
+                                <a href="dashboard.php?history_id=${data.history_id}" style="text-decoration: none; display: block; color: inherit; padding-right: 28px;">
+                                    <div class="history-mini-item" title="Original: ${escapedPrompt}" style="margin-bottom: 0;">
+                                        <i class="far fa-clock"></i> ${rawPrompt}
+                                    </div>
+                                </a>
+                                <button type="button" onclick="toggleHistoryMenu(event, ${data.history_id})" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 6px; font-size: 0.85rem; border-radius: 4px;">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div id="menu-${data.history_id}" class="history-dropdown-menu" style="display: none; position: absolute; right: 5px; top: 30px; z-index: 9999; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15); width: 120px; padding: 4px 0;">
+                                    <a href="#" onclick="renameHistory(event, ${data.history_id}, '${escapedPrompt}')" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                        <i class="fas fa-edit" style="color: #2563eb;"></i> Rename
+                                    </a>
+                                    <a href="delete_history.php?id=${data.history_id}" onclick="return confirm('Are you sure you want to delete this query history?')" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: #ef4444; text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </a>
+                                </div>
+                            `;
+
+                            historyContainer.insertBefore(wrapper, historyContainer.firstChild);
+                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);
