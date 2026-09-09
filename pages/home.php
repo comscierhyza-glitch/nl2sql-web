@@ -110,12 +110,12 @@
                 </button>
 
                 <!-- COPY BUTTON -->
-                <button type="button" onclick="copySQL()" <?= empty($sql) ? 'disabled' : '' ?> class="sql-action-btn" title="Copy SQL">
+                <button type="button" id="copyBtn" onclick="copySQL()" <?= empty($sql) ? 'disabled' : '' ?> class="sql-action-btn" title="Copy SQL">
                     <i class="far fa-copy"></i>
                 </button>
 
                 <!-- DOWNLOAD BUTTON -->
-                <button type="button" onclick="downloadSQL()" <?= empty($sql) ? 'disabled' : '' ?> class="sql-action-btn" title="Download SQL">
+                <button type="button" id="downloadBtn" onclick="downloadSQL()" <?= empty($sql) ? 'disabled' : '' ?> class="sql-action-btn" title="Download SQL">
                     <i class="fas fa-download"></i>
                 </button>
             </div>
@@ -229,9 +229,9 @@
 
 <!-- FLOATING TOAST NOTIFICATION (BOTTOM-RIGHT) -->
 <?php if ($executionTime > 0): ?>
-    <?php 
-        $sqlCheck = $generatedSql ?? $sql ?? $context['sql'] ?? '';
-        $isError = (strpos($sqlCheck, 'ERROR:') !== false);
+    <?php
+    $sqlCheck = $generatedSql ?? $sql ?? $context['sql'] ?? '';
+    $isError = (strpos($sqlCheck, 'ERROR:') !== false);
     ?>
     <div class="execution-time" style="position: fixed; bottom: 24px; right: 28px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); <?= $isError ? 'background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;' : 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;' ?>">
         <?php if ($isError): ?>

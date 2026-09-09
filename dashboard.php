@@ -1460,6 +1460,11 @@ if ($isLoggedIn && isset($conn)) {
                     editBtn.innerHTML = '<i class="fas fa-pen-to-square"></i>';
                     editBtn.title = "Edit SQL";
                 }
+                // Disable Copy and Download buttons on clear
+                const copyBtn = document.getElementById('copyBtn');
+                const downloadBtn = document.getElementById('downloadBtn');
+                if (copyBtn) copyBtn.setAttribute('disabled', 'true');
+                if (downloadBtn) downloadBtn.setAttribute('disabled', 'true');
             }
 
             // 3. I-reset ang Query Insights Explanation Box & Metrics Row
@@ -1644,6 +1649,11 @@ if ($isLoggedIn && isset($conn)) {
                                 counterElem.innerText = count - 1;
                             }
                         }
+                        // Enable Copy and Download buttons
+                        const copyBtn = document.getElementById('copyBtn');
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        if (copyBtn) copyBtn.removeAttribute('disabled');
+                        if (downloadBtn) downloadBtn.removeAttribute('disabled');
                     })
                     .catch(error => {
                         console.error('Error:', error);
