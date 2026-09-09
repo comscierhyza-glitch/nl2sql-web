@@ -1253,7 +1253,7 @@ if ($isLoggedIn && isset($conn)) {
         }
 
         // ==========================================
-        // 1. TOGGLE EDIT (UNIVERSAL)
+        // 1. TOGGLE EDIT (WITH PLACEHOLDER GUARD)
         // ==========================================
         function toggleEdit() {
             const sqlOutput = document.getElementById('sqlOutput');
@@ -1261,9 +1261,17 @@ if ($isLoggedIn && isset($conn)) {
 
             if (!sqlOutput || !editBtn) return;
 
+            const sqlText = getSQLContent();
+
             // Kon Textarea
             if (sqlOutput.tagName.toLowerCase() === 'textarea') {
-                if (sqlOutput.hasAttribute('readonly')) {
+                const isReadonly = sqlOutput.hasAttribute('readonly');
+                if (isReadonly) {
+                    // Dili tugotan kon placeholder, loading, o error pa ang sulod
+                    if (!sqlText || sqlText.includes('Awaiting new') || sqlText.includes('Translating') || sqlText.includes('ERROR:')) {
+                        alert('Walay valid nga generated SQL nga ma-edit!');
+                        return;
+                    }
                     sqlOutput.removeAttribute('readonly');
                     sqlOutput.style.border = '2px solid #2563eb';
                     sqlOutput.focus();
@@ -1279,6 +1287,11 @@ if ($isLoggedIn && isset($conn)) {
                 // Kon <pre> o <div> tag
                 const isEditable = sqlOutput.getAttribute('contenteditable') === 'true';
                 if (!isEditable) {
+                    // Dili tugotan kon placeholder, loading, o error pa ang sulod
+                    if (!sqlText || sqlText.includes('Awaiting new') || sqlText.includes('Translating') || sqlText.includes('ERROR:')) {
+                        alert('Walay valid nga generated SQL nga ma-edit!');
+                        return;
+                    }
                     sqlOutput.setAttribute('contenteditable', 'true');
                     sqlOutput.style.border = '2px solid #2563eb';
                     sqlOutput.style.outline = 'none';
@@ -1431,6 +1444,19 @@ if ($isLoggedIn && isset($conn)) {
                 }
                 if (window.Prism) {
                     Prism.highlightElement(sqlDisplay);
+                }
+                // Ibalik sa locked status kon gi-clear
+                if (sqlDisplay.tagName.toLowerCase() === 'textarea') {
+                    sqlDisplay.setAttribute('readonly', 'true');
+                } else {
+                    sqlDisplay.setAttribute('contenteditable', 'false');
+                }
+                sqlDisplay.style.border = 'none';
+
+                const editBtn = document.getElementById('editBtn');
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="fas fa-pen-to-square"></i>';
+                    editBtn.title = "Edit SQL";
                 }
             }
 
