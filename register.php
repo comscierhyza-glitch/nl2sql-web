@@ -1,10 +1,5 @@
 <?php
 session_start();
-// Ilisi ang details sa imong database kon gikinahanglan (host, dbname, username, password)
-$host = 'localhost';
-$db = 'sqlg1_db';
-$user = 'root';
-$pass = '';
 
 $error = '';
 $success = '';
@@ -22,16 +17,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Password and confirm password do not match.";
     } else {
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+            $host = getenv('MYSQLHOST') ?: '127.0.0.1';
+            $user = getenv('MYSQLUSER') ?: 'root';
+            $pass = getenv('MYSQLPASSWORD') ?: '';
+            $db   = getenv('MYSQLDATABASE') ?: 'railway';
+            $port = getenv('MYSQLPORT') ?: 3306;
+
+            $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // Check kung naay existing username o email
+            // Check if username or email already exists
             $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
             $stmt->execute([$username, $email]);
             if ($stmt->rowCount() > 0) {
                 $error = "The username or email is already registered.";
             } else {
-                // I-save ang user nga naay hashed password
+                // Save user with hashed password
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 $insert = $pdo->prepare("INSERT INTO users (fullname, email, username, password) VALUES (?, ?, ?, ?)");
                 $insert->execute([$fullname, $email, $username, $hashed_password]);
