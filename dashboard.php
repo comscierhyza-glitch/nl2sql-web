@@ -181,9 +181,16 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
             if (preg_match('/LIKE\s+[\'"]%.*?[\'"]/i', $sqlUpper)) $compScore += 25;
             if (preg_match('/\(\s*SELECT\b/i', $sqlUpper)) $compScore += 30;
 
-            if ($compScore <= 25) { $compLevel = "LOW"; $badgeColor = "#10b981"; }
-            elseif ($compScore <= 60) { $compLevel = "MEDIUM"; $badgeColor = "#f59e0b"; }
-            else { $compLevel = "HIGH"; $badgeColor = "#ef4444"; }
+            if ($compScore <= 25) {
+                $compLevel = "LOW";
+                $badgeColor = "#10b981";
+            } elseif ($compScore <= 60) {
+                $compLevel = "MEDIUM";
+                $badgeColor = "#f59e0b";
+            } else {
+                $compLevel = "HIGH";
+                $badgeColor = "#ef4444";
+            }
 
             // Dynamic Explanation
             preg_match('/FROM\s+([a-zA-Z0-9_]+)/i', $sql, $matches);
@@ -1050,7 +1057,7 @@ if ($isLoggedIn && isset($conn)) {
             <div class="guest-banner">
                 <span>
                     <i class="fas fa-info-circle"></i>
-                    <strong>Guest Mode:</strong> You have <strong><?= $remaining ?>/10</strong> free queries left.
+                    <strong>Guest Mode:</strong> You have <strong><span id="guest-remaining-count"><?= $remaining ?></span>/10</strong> free queries left.
                     <a href="login.php">Log In</a> or <a href="register.php">Sign Up</a> to get unlimited queries.
                 </span>
             </div>
@@ -1520,119 +1527,127 @@ if ($isLoggedIn && isset($conn)) {
         }
 
         // AJAX Handler: Dynamic Update para sa SQL ug Query Insights
-const sqlForm = document.getElementById('sqlForm');
-const generateBtn = document.getElementById('generateBtn');
-const btnText = document.getElementById('btnText');
-const sqlOutput = document.getElementById('sqlOutput');
+        const sqlForm = document.getElementById('sqlForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        const sqlOutput = document.getElementById('sqlOutput');
 
-if (sqlForm) {
-    sqlForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+        if (sqlForm) {
+            sqlForm.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-        const originalBtnHtml = btnText ? btnText.innerHTML : 'Generate SQL';
+                const originalBtnHtml = btnText ? btnText.innerHTML : 'Generate SQL';
 
-        if (generateBtn) {
-            generateBtn.disabled = true;
-            generateBtn.style.opacity = '0.7';
-            generateBtn.style.cursor = 'wait';
+                if (generateBtn) {
+                    generateBtn.disabled = true;
+                    generateBtn.style.opacity = '0.7';
+                    generateBtn.style.cursor = 'wait';
+                }
+                if (btnText) {
+                    btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating SQL...';
+                }
+
+                if (sqlOutput) {
+                    const loadingMsg = '-- Translating natural language with AI pipeline...';
+                    if (sqlOutput.tagName.toLowerCase() === 'textarea') {
+                        sqlOutput.value = loadingMsg;
+                    } else {
+                        sqlOutput.textContent = loadingMsg;
+                    }
+                }
+
+                const formData = new FormData(sqlForm);
+                formData.append('ajax', '1');
+
+                fetch('dashboard.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // 1. I-update ang SQL Output Box
+                        if (data.sql && sqlOutput) {
+                            if (sqlOutput.tagName.toLowerCase() === 'textarea') {
+                                sqlOutput.value = data.sql;
+                            } else {
+                                sqlOutput.textContent = data.sql;
+                            }
+                            if (window.Prism) {
+                                Prism.highlightElement(sqlOutput);
+                            }
+                        }
+
+                        // 2. I-update ang "What It Means" text
+                        const expElem = document.getElementById('queryExplanationText');
+                        if (expElem && data.explanation) {
+                            expElem.innerHTML = data.explanation;
+                        }
+
+                        // 3. Ipakita ang Metrics Row container
+                        const metricsRow = document.getElementById('queryMetricsRow');
+                        if (metricsRow) {
+                            metricsRow.style.display = 'flex';
+                        }
+
+                        // 1. I-update ang Operation badge
+                        const badgeOp = document.getElementById('badgeOperation');
+                        if (badgeOp) {
+                            badgeOp.textContent = data.command;
+                            badgeOp.style.color = data.is_valid ? '#2563eb' : '#64748b';
+                            badgeOp.style.backgroundColor = data.is_valid ? '#eff6ff' : '#f1f5f9';
+                        }
+
+                        // 2. I-update ang Complexity badge
+                        const badgeComp = document.getElementById('badgeComplexity');
+                        if (badgeComp) {
+                            if (data.is_valid) {
+                                badgeComp.textContent = `${data.complexity} (Score: ${data.score}/100)`;
+                            } else {
+                                badgeComp.textContent = 'N/A';
+                            }
+                            badgeComp.style.color = data.badge_color;
+                            badgeComp.style.backgroundColor = data.badge_color + '15';
+                            badgeComp.style.borderColor = data.badge_color + '40';
+                        }
+
+                        // 3. I-update ang Status badge (Dynamic: Green o Red)
+                        const badgeStatus = document.getElementById('badgeStatus');
+                        if (badgeStatus) {
+                            if (data.is_valid) {
+                                badgeStatus.innerHTML = '<i class="fas fa-check-circle"></i> Validated';
+                                badgeStatus.style.color = '#16a34a';
+                            } else {
+                                badgeStatus.innerHTML = '<i class="fas fa-times-circle"></i> Invalid / Blocked';
+                                badgeStatus.style.color = '#ef4444';
+                            }
+                        }
+                        // Kuhaan og 1 ang guest counter sa screen
+                        const counterElem = document.getElementById('guest-remaining-count');
+                        if (counterElem) {
+                            let count = parseInt(counterElem.innerText);
+                            if (count > 0) {
+                                counterElem.innerText = count - 1;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (sqlOutput) {
+                            sqlOutput.textContent = '-- An error occurred. Please try again.';
+                        }
+                    })
+                    .finally(() => {
+                        if (generateBtn) {
+                            generateBtn.disabled = false;
+                            generateBtn.style.opacity = '1';
+                            generateBtn.style.cursor = 'pointer';
+                        }
+                        if (btnText) {
+                            btnText.innerHTML = originalBtnHtml;
+                        }
+                    });
+            });
         }
-        if (btnText) {
-            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating SQL...';
-        }
-
-        if (sqlOutput) {
-            const loadingMsg = '-- Translating natural language with AI pipeline...';
-            if (sqlOutput.tagName.toLowerCase() === 'textarea') {
-                sqlOutput.value = loadingMsg;
-            } else {
-                sqlOutput.textContent = loadingMsg;
-            }
-        }
-
-        const formData = new FormData(sqlForm);
-        formData.append('ajax', '1');
-
-        fetch('dashboard.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            // 1. I-update ang SQL Output Box
-            if (data.sql && sqlOutput) {
-                if (sqlOutput.tagName.toLowerCase() === 'textarea') {
-                    sqlOutput.value = data.sql;
-                } else {
-                    sqlOutput.textContent = data.sql;
-                }
-                if (window.Prism) {
-                    Prism.highlightElement(sqlOutput);
-                }
-            }
-
-            // 2. I-update ang "What It Means" text
-            const expElem = document.getElementById('queryExplanationText');
-            if (expElem && data.explanation) {
-                expElem.innerHTML = data.explanation;
-            }
-
-            // 3. Ipakita ang Metrics Row container
-            const metricsRow = document.getElementById('queryMetricsRow');
-            if (metricsRow) {
-                metricsRow.style.display = 'flex';
-            }
-
-            // 1. I-update ang Operation badge
-            const badgeOp = document.getElementById('badgeOperation');
-            if (badgeOp) {
-                badgeOp.textContent = data.command;
-                badgeOp.style.color = data.is_valid ? '#2563eb' : '#64748b';
-                badgeOp.style.backgroundColor = data.is_valid ? '#eff6ff' : '#f1f5f9';
-            }
-
-            // 2. I-update ang Complexity badge
-            const badgeComp = document.getElementById('badgeComplexity');
-            if (badgeComp) {
-                if (data.is_valid) {
-                    badgeComp.textContent = `${data.complexity} (Score: ${data.score}/100)`;
-                } else {
-                    badgeComp.textContent = 'N/A';
-                }
-                badgeComp.style.color = data.badge_color;
-                badgeComp.style.backgroundColor = data.badge_color + '15';
-                badgeComp.style.borderColor = data.badge_color + '40';
-            }
-
-            // 3. I-update ang Status badge (Dynamic: Green o Red)
-            const badgeStatus = document.getElementById('badgeStatus');
-            if (badgeStatus) {
-                if (data.is_valid) {
-                    badgeStatus.innerHTML = '<i class="fas fa-check-circle"></i> Validated';
-                    badgeStatus.style.color = '#16a34a';
-                } else {
-                    badgeStatus.innerHTML = '<i class="fas fa-times-circle"></i> Invalid / Blocked';
-                    badgeStatus.style.color = '#ef4444';
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            if (sqlOutput) {
-                sqlOutput.textContent = '-- An error occurred. Please try again.';
-            }
-        })
-        .finally(() => {
-            if (generateBtn) {
-                generateBtn.disabled = false;
-                generateBtn.style.opacity = '1';
-                generateBtn.style.cursor = 'pointer';
-            }
-            if (btnText) {
-                btnText.innerHTML = originalBtnHtml;
-            }
-        });
-    });
-}
 
         // CLOSE MENU WHEN CLICKING OUTSIDE
         window.addEventListener('click', function() {
