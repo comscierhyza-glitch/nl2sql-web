@@ -211,14 +211,6 @@
                     }
                     ?>
 
-                    <!-- Complexity Badge -->
-                    <div id="complexityContainer">
-                        <strong>Complexity:</strong>
-                        <span id="badgeComplexity" style="color: <?= $badgeColor ?>; background: <?= $badgeColor ?>15; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8rem; border: 1px solid <?= $badgeColor ?>40;">
-                            <?= $compLevel ?> (Score: <?= $compScore ?>/100)
-                        </span>
-                    </div>
-
                     <!-- Dynamic Status Indicator -->
                     <div>
                         <strong>Status:</strong>

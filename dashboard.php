@@ -1597,19 +1597,6 @@ if ($isLoggedIn && isset($conn)) {
                             badgeOp.style.backgroundColor = data.is_valid ? '#eff6ff' : '#f1f5f9';
                         }
 
-                        // 2. I-update ang Complexity badge
-                        const badgeComp = document.getElementById('badgeComplexity');
-                        if (badgeComp) {
-                            if (data.is_valid) {
-                                badgeComp.textContent = `${data.complexity} (Score: ${data.score}/100)`;
-                            } else {
-                                badgeComp.textContent = 'N/A';
-                            }
-                            badgeComp.style.color = data.badge_color;
-                            badgeComp.style.backgroundColor = data.badge_color + '15';
-                            badgeComp.style.borderColor = data.badge_color + '40';
-                        }
-
                         // 3. I-update ang Status badge (Dynamic: Green o Red)
                         const badgeStatus = document.getElementById('badgeStatus');
                         if (badgeStatus) {

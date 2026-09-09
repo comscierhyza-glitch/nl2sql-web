@@ -492,12 +492,6 @@ session_start();
                                 <span style="color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 4px; font-weight: 600;">JOIN</span>
                             </div>
                             <div>
-                                <strong>Complexity:</strong>
-                                <span style="color: #d97706; background: #fef3c7; padding: 2px 6px; border-radius: 4px; font-weight: 700; border: 1px solid #fde68a;">
-                                    MEDIUM (Score: 35/100)
-                                </span>
-                            </div>
-                            <div>
                                 <strong>Status:</strong>
                                 <span style="color: #16a34a; font-weight: 600;">
                                     <i class="fas fa-check-circle"></i> Validated
