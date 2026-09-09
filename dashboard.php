@@ -296,7 +296,22 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             $originalInput = $selectedHistory["natural_language"] ?? $selectedHistory["natural_language_statement"] ?? '';
             $sql = $selectedHistory["generated_sql"];
 
-            // Re-detect Command from Loaded History SQL
+            // 1. Detect or retrieve dialect from the loaded query
+            $selectedDialect = $selectedHistory['dialect'] ?? '';
+            if (empty($selectedDialect)) {
+                if (stripos($sql, 'EXTRACT(') !== false) {
+                    $selectedDialect = 'PostgreSQL';
+                } elseif (stripos($sql, 'AVG(') !== false && stripos($sql, 'INTERVAL') === false) {
+                    $selectedDialect = 'SQLite';
+                } elseif (preg_match('/\bCOUNT\s*\(\s*\*\s*\)\s+as\s+[a-zA-Z_]+\s+FROM/i', $sql) && stripos($sql, ';') === false) {
+                    $selectedDialect = 'MS SQL Server';
+                } else {
+                    $selectedDialect = 'MySQL / MariaDB';
+                }
+            }
+            $_SESSION['selected_dialect'] = $selectedDialect;
+
+            // 2. Re-detect Command from Loaded History SQL
             $sqlUpper = strtoupper(trim($sql));
             if (strpos($sqlUpper, "CREATE") === 0) $sql_command = "CREATE TABLE";
             elseif (strpos($sqlUpper, "ALTER") === 0) $sql_command = "ALTER TABLE";
@@ -313,10 +328,10 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             $keywords = ["Operation" => $sql_command, "Target" => "Loaded from Permanent History"];
             $parsed = ["command" => $sql_command, "tables" => ["auto"], "columns" => ["*"]];
 
-            //I-save sa Session aron makita sa Pipeline Breakdown (pages/nlp.php)
+            // 3. Save to Session for Pipeline Breakdown
             $_SESSION["last_nlp"] = [
                 "original_input"   => $originalInput,
-                "selected_dialect" => $_SESSION['selected_dialect'] ?? 'MySQL',
+                "selected_dialect" => $selectedDialect,
                 "ai_standardized"  => $originalInput,
                 "command"          => $sql_command,
                 "keywords"         => $keywords,

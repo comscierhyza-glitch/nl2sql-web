@@ -28,10 +28,11 @@
                     <i class="fas fa-database" style="color: #2563eb;"></i> Target Dialect:
                 </label>
                 <select name="dialect" id="dialect" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem; background: white; color: #1e293b; font-weight: 600; outline: none; cursor: pointer;">
-                    <option value="MySQL" <?= $activeDialect === 'MySQL' ? 'selected' : '' ?>>MySQL / MariaDB</option>
-                    <option value="PostgreSQL" <?= $activeDialect === 'PostgreSQL' ? 'selected' : '' ?>>PostgreSQL</option>
-                    <option value="SQLite" <?= $activeDialect === 'SQLite' ? 'selected' : '' ?>>SQLite</option>
-                    <option value="Microsoft SQL Server" <?= $activeDialect === 'Microsoft SQL Server' ? 'selected' : '' ?>>MS SQL Server</option>
+                    <?php $currentD = $selectedDialect ?? $activeDialect ?? 'MySQL'; ?>
+                    <option value="MySQL" <?= (stripos($currentD, 'mysql') !== false) ? 'selected' : '' ?>>MySQL / MariaDB</option>
+                    <option value="PostgreSQL" <?= (stripos($currentD, 'postgres') !== false) ? 'selected' : '' ?>>PostgreSQL</option>
+                    <option value="SQLite" <?= (stripos($currentD, 'sqlite') !== false) ? 'selected' : '' ?>>SQLite</option>
+                    <option value="Microsoft SQL Server" <?= (stripos($currentD, 'sql server') !== false || stripos($currentD, 'mssql') !== false) ? 'selected' : '' ?>>MS SQL Server</option>
                 </select>
             </div>
 
