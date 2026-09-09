@@ -1,14 +1,13 @@
 <?php
+$host     = getenv('MYSQLHOST') ?: 'localhost';
+$user     = getenv('MYSQLUSER') ?: 'root';
+$password = getenv('MYSQLPASSWORD') ?: '';
+$database = getenv('MYSQLDATABASE') ?: 'railway';
+$port     = getenv('MYSQLPORT') ?: 3306;
 
-$host     = "sql106.infinityfree.com";
-$user     = "if0_42839730";
-$password = "AIp9ucUxbdTlnen"; 
-$database = "if0_42839730_sqlg1_db";
-
-$conn = mysqli_connect($host, $user, $password, $database);
+$conn = mysqli_connect($host, $user, $password, $database, (int)$port);
 
 if (!$conn) {
     die("Database Connection Failed: " . mysqli_connect_error());
 }
-
 ?>
