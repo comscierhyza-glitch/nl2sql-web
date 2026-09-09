@@ -34,9 +34,16 @@ if (!empty($sql)) {
     if (preg_match('/SELECT\s+(.*?)\s+FROM/is', $sql, $selectMatches)) {
         $rawCols = explode(',', $selectMatches[1]);
         foreach ($rawCols as $col) {
-            $clean = trim(preg_replace('/^(?:SUM|AVG|COUNT|MAX|MIN|DISTINCT)\s*\(\s*|\s*\).*$/i', '', $col));
-            $clean = preg_replace('/.*?\./', '', $clean);
+            $col = trim($col); // Strip leading and trailing whitespace
+
+            // Strip aggregate wrappers and column aliases
+            $clean = preg_replace('/^(?:SUM|AVG|COUNT|MAX|MIN|DISTINCT)\s*\(\s*/i', '', $col);
+            $clean = preg_replace('/\s*\).*$/i', '', $clean);
+            $clean = preg_replace('/\s+AS\s+.*$/i', '', $clean); // Strip aliases without parentheses
+            $clean = preg_replace('/.*?\./', '', $clean);        // Strip table prefixes (e.g., users.country)
             $clean = trim(preg_replace('/[`"\s]/', '', $clean));
+
+            // Exclude wildcard asterisks, numeric literals, or empty strings
             if (!empty($clean) && $clean !== '*' && !preg_match('/^\d+$/', $clean)) {
                 $extractedCols[] = $clean;
             }
