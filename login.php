@@ -15,7 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Please enter both username and password.";
     } else {
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+            $host = getenv('MYSQLHOST') ?: '127.0.0.1';
+            $user = getenv('MYSQLUSER') ?: 'root';
+            $pass = getenv('MYSQLPASSWORD') ?: '';
+            $db   = getenv('MYSQLDATABASE') ?: 'railway';
+            $port = getenv('MYSQLPORT') ?: 3306;
+
+            $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
