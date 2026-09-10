@@ -7,15 +7,19 @@ function validateCommand(array &$context): void
 
     // 2. Fallback: Extract the first word directly from generated SQL or input
     if (empty($command)) {
-        // Prioritize actual generated SQL before fallbacks
         $ai_query = $context["sql"] ?? $context["standardized"] ?? $context["input"] ?? $context["query"] ?? ""; 
-        
-        // Extract the leading keyword (e.g., "SELECT")
         $first_word = strtok(trim($ai_query), " \n\t"); 
         $command = strtoupper($first_word);
-        
-        // Update context with parsed command
         $context["parsed"]["command"] = $command; 
+    }
+
+    // 3. Security Restriction for DCL / Administrative Commands
+    if (in_array($command, ["GRANT", "REVOKE"])) {
+        $context["validation"]["status"] = "RESTRICTED";
+        $context["parsed"]["command"] = "DCL / ADMIN";
+        $context["explanation"] = "Administrative and privilege commands (e.g., GRANT, REVOKE) are restricted for security reasons and fall outside the developer query scope.";
+        $context["validation"]["errors"][] = "Administrative privilege commands are out of scope.";
+        return;
     }
 
     if (empty($command)) {
@@ -24,7 +28,7 @@ function validateCommand(array &$context): void
         return;
     }
 
-    // 3. Validate against supported DDL/DML commands
+    // 4. Supported DDL / DML Commands
     $supported = [
         "SELECT",
         "INSERT",

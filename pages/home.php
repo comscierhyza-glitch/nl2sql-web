@@ -215,9 +215,19 @@
                     <!-- Dynamic Status Indicator -->
                     <div>
                         <strong>Status:</strong>
-                        <span id="badgeStatus" style="color: #16a34a; font-weight: 600;">
-                            <i class="fas fa-check-circle"></i> Validated
-                        </span>
+                        <?php if (isset($validation_status) && $validation_status === 'RESTRICTED'): ?>
+                            <span id="badgeStatus" style="color: #ea580c; font-weight: 600;">
+                                <i class="fas fa-exclamation-triangle"></i> Restricted / Out of Scope
+                            </span>
+                        <?php elseif (isset($validation_status) && ($validation_status === 'VALID' || $validation_status === 'Validated')): ?>
+                            <span id="badgeStatus" style="color: #16a34a; font-weight: 600;">
+                                <i class="fas fa-check-circle"></i> Validated
+                            </span>
+                        <?php else: ?>
+                            <span id="badgeStatus" style="color: #dc2626; font-weight: 600;">
+                                <i class="fas fa-times-circle"></i> Invalid / Blocked
+                            </span>
+                        <?php endif; ?>
                     </div>
 
                 </div>

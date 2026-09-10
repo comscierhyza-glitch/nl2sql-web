@@ -96,7 +96,14 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
         $sqlUpper = strtoupper(trim($sql));
         $detectedCommand = "SELECT";
 
-        if (strpos($sqlUpper, "CREATE TABLE") === 0 || strpos($sqlUpper, "CREATE") === 0) $detectedCommand = "CREATE TABLE";
+        // 1. DCL / ADMIN RESTRICTION (Unahon pagsusi)
+        if (strpos($sqlUpper, "GRANT") === 0 || strpos($sqlUpper, "REVOKE") === 0) {
+            $detectedCommand = "DCL / ADMIN";
+            $validation_status = "RESTRICTED";
+            $explanation = "Administrative and privilege commands (e.g., GRANT, REVOKE) are restricted for security reasons and fall outside the developer query scope.";
+        }
+        // 2. DDL & DML COMMANDS (Imong daang checks)
+        elseif (strpos($sqlUpper, "CREATE TABLE") === 0 || strpos($sqlUpper, "CREATE") === 0) $detectedCommand = "CREATE TABLE";
         elseif (strpos($sqlUpper, "ALTER TABLE") === 0 || strpos($sqlUpper, "ALTER") === 0) $detectedCommand = "ALTER TABLE";
         elseif (strpos($sqlUpper, "DROP TABLE") === 0 || strpos($sqlUpper, "DROP") === 0) $detectedCommand = "DROP TABLE";
         elseif (strpos($sqlUpper, "TRUNCATE") === 0) $detectedCommand = "TRUNCATE";
@@ -225,9 +232,16 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
         }
 
         // =========================================================================
-        // 2. SECURITY & SCHEMA VALIDATION CHECK (OVERRIDE IF BLOCKED)
+        // 2. SECURITY & SCHEMA VALIDATION CHECK (OVERRIDE IF BLOCKED / RESTRICTED)
         // =========================================================================
         $sqlUpperTrim = strtoupper(trim($sql));
+
+        // Check kon DCL / Administrative command ba
+        $isRestrictedDCL = (
+            strpos($sqlUpperTrim, 'GRANT') === 0 ||
+            strpos($sqlUpperTrim, 'REVOKE') === 0
+        );
+
         $isBlockedOrNotice = (
             strpos($sqlUpperTrim, 'BLOCKED BY SAFETY FIREWALL') !== false ||
             strpos($sqlUpperTrim, 'ERROR:') !== false ||
@@ -236,6 +250,16 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
             strpos($sqlUpperTrim, 'CAUSE DATA LOSS') !== false ||
             strpos($sqlUpperTrim, '--') === 0
         );
+
+        // I-apply ang status ug operation override
+        if ($isRestrictedDCL) {
+            $sql_command = "DCL / ADMIN";
+            $validation_status = "RESTRICTED";
+            $explanation = "Administrative and privilege commands (e.g., GRANT, REVOKE) are restricted for security reasons and fall outside the developer query scope.";
+        } elseif ($isBlockedOrNotice) {
+            $sql_command = "NONE";
+            $validation_status = "INVALID";
+        }
 
         $isValid = !$isBlockedOrNotice;
 
@@ -1663,7 +1687,10 @@ if ($isLoggedIn && isset($conn)) {
                         // 5. Update Status badge
                         const badgeStatus = document.getElementById('badgeStatus');
                         if (badgeStatus) {
-                            if (data.is_valid) {
+                            if (data.validation_status === 'RESTRICTED') {
+                                badgeStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Restricted / Out of Scope';
+                                badgeStatus.style.color = '#ea580c';
+                            } else if (data.is_valid) {
                                 badgeStatus.innerHTML = '<i class="fas fa-check-circle"></i> Validated';
                                 badgeStatus.style.color = '#16a34a';
                             } else {
