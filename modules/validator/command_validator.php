@@ -2,19 +2,19 @@
 
 function validateCommand(array &$context): void
 {
-    // 1. Sulayi pagkuha ang command gikan sa daan nga parser setup
+    // 1. Retrieve command from parser context if available
     $command = strtoupper($context["parsed"]["command"] ?? "");
 
-    // 2. AI INTEGRATION: Kung empty, kuhaon nato ang first word gikan sa AI output
+    // 2. Fallback: Extract the first word directly from generated SQL or input
     if (empty($command)) {
-        // Pangitaon ang AI output (kasagaran naka-save ni sa 'standardized' o 'input' key human sa AI stage)
-        $ai_query = $context["standardized"] ?? $context["input"] ?? $context["query"] ?? ""; 
+        // Prioritize actual generated SQL before fallbacks
+        $ai_query = $context["sql"] ?? $context["standardized"] ?? $context["input"] ?? $context["query"] ?? ""; 
         
-        // Gamiton ang strtok para makuha ang pinaka-unang word sa SQL query (ex. "SELECT")
+        // Extract the leading keyword (e.g., "SELECT")
         $first_word = strtok(trim($ai_query), " \n\t"); 
         $command = strtoupper($first_word);
         
-        // I-save balik sa context para magamit sa sunod nga mga modules
+        // Update context with parsed command
         $context["parsed"]["command"] = $command; 
     }
 
@@ -24,7 +24,7 @@ function validateCommand(array &$context): void
         return;
     }
 
-    // 3. I-update ang supported list (First word lang atong basahon para mas flexible)
+    // 3. Validate against supported DDL/DML commands
     $supported = [
         "SELECT",
         "INSERT",
@@ -39,7 +39,6 @@ function validateCommand(array &$context): void
 
     if (!in_array($command, $supported)) {
         $context["validation"]["status"] = "INVALID";
-        // Gi-apil nato ang $command sa error message para makita nimo unsay gi-block sa guard
         $context["validation"]["errors"][] = "Unsupported or unsafe SQL command detected: " . $command;
     }
 }
