@@ -895,16 +895,18 @@ if ($isLoggedIn && isset($conn)) {
         }
 
         /* =======================================================
-       MOBILE & TABLET RESPONSIVE ENGINE (NL2SQL)
-     ======================================================= */
+   MOBILE & TABLET RESPONSIVE ENGINE (NL2SQL)
+======================================================= */
         @media (max-width: 992px) {
 
-            /* 1. Himuong 1-Column ang Workspace Cards */
+            /* 1. Himuong 1-Column ang Workspace Cards ug wagtangon ang dako nga haw-ang */
             .top-grid {
                 grid-template-columns: 1fr !important;
                 gap: 16px !important;
+                width: 100% !important;
             }
 
+            /* 2. Responsive Sidebar Drawer (Ayaw tangtanga) */
             .gemini-sidebar {
                 position: fixed !important;
                 top: 0;
@@ -912,10 +914,10 @@ if ($isLoggedIn && isset($conn)) {
                 bottom: 0;
                 z-index: 9999;
                 box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
-                /* Default sa mobile: Naka-tago */
                 margin-left: calc(-1 * var(--sidebar-width));
                 opacity: 0;
                 visibility: hidden;
+                transition: all 0.3s ease;
             }
 
             .gemini-sidebar.open-mobile {
@@ -924,21 +926,51 @@ if ($isLoggedIn && isset($conn)) {
                 visibility: visible !important;
             }
 
+            /* 3. Menusan ang padding sa content area aron modapat sa kilid */
             .content-body {
-                padding: 16px 12px !important;
+                padding: 12px 10px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
             }
 
             .gemini-header {
-                padding: 12px 16px !important;
+                padding: 10px 14px !important;
             }
 
             .guest-banner {
-                padding: 10px 16px !important;
+                padding: 10px 14px !important;
                 font-size: 0.8rem !important;
+            }
+
+            /* 4. Full width edge-to-edge styling sa cards sulod sa dashboard */
+            .card,
+            .workspace-card,
+            div[class*="card"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 16px 14px !important;
+                box-sizing: border-box !important;
+                border-radius: 12px !important;
+            }
+
+            /* Luagan ang text input sa cellphone */
+            textarea,
+            input[type="text"] {
+                font-size: 0.95rem !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Full width Generate SQL Button */
+            .btn-primary,
+            button[type="submit"],
+            #generateBtn {
+                width: 100% !important;
+                justify-content: center !important;
             }
         }
 
-        /* Close button sulod sa Sidebar Header (Tago sa Desktop) */
+        /* Close button sulod sa Sidebar Header */
         .sidebar-close-btn {
             display: none;
             background: transparent;
@@ -969,33 +1001,31 @@ if ($isLoggedIn && isset($conn)) {
             z-index: 9998;
         }
 
-        /* Mobile Adjustments */
+        /* Mobile Adjustments para sa Sidebar Toggles */
         @media (max-width: 992px) {
-
-            /* Ipakita ang X button sa sidebar drawer */
             .sidebar-close-btn {
                 display: flex !important;
                 align-items: center;
                 justify-content: center;
             }
 
-            /* Ipakita ang backdrop kon abli ang sidebar */
             .sidebar-overlay.active {
                 display: block;
             }
         }
 
-        /* NLP Header & Button Mobile Optimization */
+        /* Header & Compact Buttons sa Mobile Screen (< 768px) */
         @media (max-width: 768px) {
+            .guest-label-text {
+                display: none !important;
+            }
 
-            /* 1. I-stack ang title ug ang button aron dili magpiot */
             .content-body div[style*="justify-content: space-between"] {
                 flex-direction: column !important;
                 align-items: flex-start !important;
-                gap: 14px !important;
+                gap: 12px !important;
             }
 
-            /* 2. Himuong compact ang button ug pugngan ang pag-wrap sa text */
             .content-body a[href*="dashboard.php"] {
                 font-size: 0.8rem !important;
                 padding: 6px 12px !important;
@@ -1003,17 +1033,6 @@ if ($isLoggedIn && isset($conn)) {
                 display: inline-flex !important;
                 align-items: center !important;
                 gap: 6px !important;
-            }
-        }
-
-        /* Tagoa ang 'Guest Mode' text kung mobile screen */
-        @media (max-width: 768px) {
-            .guest-label-text {
-                display: none !important;
-            }
-
-            .gemini-header {
-                padding: 10px 14px !important;
             }
         }
     </style>

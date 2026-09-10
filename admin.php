@@ -15,7 +15,6 @@ $checkAdmin = mysqli_query($conn, "SELECT role FROM users WHERE id = $userId");
 $userRole = mysqli_fetch_assoc($checkAdmin)['role'] ?? 'user';
 
 if ($userRole !== 'admin') {
-    // Redirection kon dili Admin
     header("Location: dashboard.php");
     exit();
 }
@@ -25,7 +24,7 @@ if ($userRole !== 'admin') {
 // -------------------------------------------------------------------------
 if (isset($_GET['delete_user'])) {
     $delUserId = (int)$_GET['delete_user'];
-    if ($delUserId !== $userId) { // Dili pwede i-delete ang kaugalingon
+    if ($delUserId !== $userId) {
         mysqli_query($conn, "DELETE FROM users WHERE id = $delUserId");
     }
     header("Location: admin.php");
@@ -44,8 +43,6 @@ if (isset($_GET['delete_log'])) {
 // -------------------------------------------------------------------------
 $totalUsers = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM users"))['count'] ?? 0;
 $totalQueries = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM query_history"))['count'] ?? 0;
-
-// 📌 GIDUGANG: Ihap sa Guest Queries (user_id IS NULL)
 $totalGuestQueries = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM query_history WHERE user_id IS NULL"))['count'] ?? 0;
 
 // -------------------------------------------------------------------------
@@ -66,11 +63,15 @@ $logsQuery = mysqli_query($conn, "
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>NL2SQL | System Administration Panel</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -140,26 +141,27 @@ $logsQuery = mysqli_query($conn, "
             gap: 10px;
         }
 
-        /* ----------------------------------------------------
-           SCROLLABLE TABLE CONTAINER STYLES (ADDED)
-           ---------------------------------------------------- */
         .scrollable-table-wrapper {
             overflow-y: auto;
+            overflow-x: auto;
             border-radius: 8px;
             border: 1px solid #f1f5f9;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-hint {
+            display: none;
         }
 
         .users-scroll {
-            max-height: 220px;
-            /* Fixed scroll height for Users */
+            max-height: 240px;
         }
 
         .logs-scroll {
-            max-height: 350px;
-            /* Fixed scroll height for Audit Logs */
+            max-height: 380px;
         }
 
-        /* Custom Modern Scrollbar */
         .scrollable-table-wrapper::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -174,24 +176,18 @@ $logsQuery = mysqli_query($conn, "
             border-radius: 4px;
         }
 
-        .scrollable-table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85rem;
         }
 
-        th,
-        td {
+        th, td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #f1f5f9;
         }
 
-        /* Sticky Header so column titles stay visible when scrolling */
         th {
             background: #f8fafc;
             color: #64748b;
@@ -239,67 +235,93 @@ $logsQuery = mysqli_query($conn, "
         }
 
         /* =======================================================
-         ADMIN PANEL MOBILE RESPONSIVE ENGINE
+           MOBILE VIEWPORT OPTIMIZATIONS (EDGE-TO-EDGE FIT)
         ======================================================= */
         @media (max-width: 768px) {
-
-            /* 1. Header Responsive (I-stack ang Title ug Buttons) */
             .admin-header {
                 flex-direction: column !important;
                 align-items: flex-start !important;
-                padding: 16px !important;
-                gap: 14px !important;
-                height: auto !important;
+                padding: 12px 14px !important;
+                gap: 12px !important;
             }
 
-            .admin-header>div {
+            .admin-header > div {
                 width: 100% !important;
                 display: flex !important;
                 flex-wrap: wrap !important;
                 align-items: center !important;
                 justify-content: space-between !important;
-                gap: 10px !important;
+                gap: 8px !important;
             }
 
-            .admin-header h1,
-            .admin-header .admin-title {
-                font-size: 1.15rem !important;
+            .admin-header h2 {
+                font-size: 1.05rem !important;
             }
 
+            /* Gipagamyan ang kilid aron dili mausik ang screen sa cellphone */
             .admin-container {
-                padding: 16px 12px !important;
+                padding: 10px 8px !important;
+                margin: 10px auto !important;
                 width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
             }
 
-            .stats-grid,
-            .admin-stats-grid,
-            div[style*="grid-template-columns"] {
+            .stats-grid {
                 grid-template-columns: 1fr !important;
+                gap: 10px !important;
+                margin-bottom: 16px !important;
+            }
+
+            .stat-card {
+                padding: 14px 14px !important;
+                border-radius: 8px !important;
                 gap: 12px !important;
             }
 
-            .table-container,
-            .card,
-            div[style*="overflow"] {
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
+            .stat-icon {
+                width: 44px !important;
+                height: 44px !important;
+                font-size: 1.25rem !important;
             }
 
+            /* Gi-adjust ang card padding gikan 20px ngadto sa 10px */
+            .card-table {
+                padding: 14px 10px !important;
+                border-radius: 8px !important;
+                margin-bottom: 16px !important;
+            }
+
+            .card-table h3 {
+                font-size: 0.95rem !important;
+                margin-bottom: 10px !important;
+            }
+
+            /* Compact table cells */
             table {
-                min-width: 520px !important;
+                min-width: 500px !important;
             }
 
-            /* 5. Compact Buttons para sa Mobile */
+            th, td {
+                padding: 8px 10px !important;
+                font-size: 0.78rem !important;
+            }
+
+            .scroll-hint {
+                display: flex !important;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.72rem;
+                color: #64748b;
+                background: #f1f5f9;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 5px 8px;
+                margin-bottom: 8px;
+            }
+
             .admin-header a,
             .admin-header button {
-                font-size: 0.8rem !important;
-                padding: 6px 12px !important;
-                white-space: nowrap !important;
+                font-size: 0.78rem !important;
+                padding: 5px 10px !important;
             }
         }
     </style>
@@ -309,16 +331,18 @@ $logsQuery = mysqli_query($conn, "
 
     <!-- ADMIN HEADER -->
     <div class="admin-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <i class="fas fa-user-shield" style="font-size: 1.5rem; color: #3b82f6;"></i>
-            <h2 style="margin: 0; font-size: 1.2rem;">NL2SQL Administration Control Center</h2>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-shield" style="font-size: 1.3rem; color: #3b82f6;"></i>
+            <h2 style="margin: 0; font-size: 1.15rem;">NL2SQL Admin Control Center</h2>
         </div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <span style="font-size: 0.9rem; color: #cbd5e1;">Logged in as: <strong><?= htmlspecialchars($_SESSION['username'] ?? 'Admin') ?></strong></span>
-            <a href="dashboard.php" style="background: #2563eb; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fas fa-terminal"></i> Open SQL Workspace
-            </a>
-            <a href="logout.php" style="background: #ef4444; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">Logout</a>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 0.85rem; color: #cbd5e1;">Logged in: <strong><?= htmlspecialchars($_SESSION['username'] ?? 'Admin') ?></strong></span>
+            <div style="display: flex; gap: 8px;">
+                <a href="dashboard.php" style="background: #2563eb; color: white; text-decoration: none; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-terminal"></i> Workspace
+                </a>
+                <a href="logout.php" style="background: #ef4444; color: white; text-decoration: none; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Logout</a>
+            </div>
         </div>
     </div>
 
@@ -331,8 +355,8 @@ $logsQuery = mysqli_query($conn, "
                     <i class="fas fa-users"></i>
                 </div>
                 <div>
-                    <h4 style="margin: 0; font-size: 0.8rem; color: #64748b; text-transform: uppercase;">Total Registered Users</h4>
-                    <span style="font-size: 1.5rem; font-weight: 700; color: #0f172a;"><?= $totalUsers ?></span>
+                    <h4 style="margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Total Registered Users</h4>
+                    <span style="font-size: 1.4rem; font-weight: 700; color: #0f172a;"><?= $totalUsers ?></span>
                 </div>
             </div>
 
@@ -341,19 +365,18 @@ $logsQuery = mysqli_query($conn, "
                     <i class="fas fa-database"></i>
                 </div>
                 <div>
-                    <h4 style="margin: 0; font-size: 0.8rem; color: #64748b; text-transform: uppercase;">Total Queries Processed</h4>
-                    <span style="font-size: 1.5rem; font-weight: 700; color: #0f172a;"><?= $totalQueries ?></span>
+                    <h4 style="margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Total Queries Processed</h4>
+                    <span style="font-size: 1.4rem; font-weight: 700; color: #0f172a;"><?= $totalQueries ?></span>
                 </div>
             </div>
 
-            <!-- 📌 GUEST QUERIES PROCESSED CARD -->
             <div class="stat-card">
                 <div class="stat-icon" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
                     <i class="fas fa-user-secret"></i>
                 </div>
                 <div>
-                    <h4 style="margin: 0; font-size: 0.8rem; color: #64748b; text-transform: uppercase;">Guest Queries Processed</h4>
-                    <span style="font-size: 1.5rem; font-weight: 700; color: #0f172a;"><?= $totalGuestQueries ?></span>
+                    <h4 style="margin: 0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Guest Queries Processed</h4>
+                    <span style="font-size: 1.4rem; font-weight: 700; color: #0f172a;"><?= $totalGuestQueries ?></span>
                 </div>
             </div>
         </div>
@@ -362,6 +385,7 @@ $logsQuery = mysqli_query($conn, "
         <div class="card-table">
             <h3><i class="fas fa-users-cog text-primary"></i> User Management</h3>
 
+            <p class="scroll-hint"><i class="fas fa-arrows-left-right"></i> Swipe left/right to view all columns</p>
             <div class="scrollable-table-wrapper users-scroll">
                 <table>
                     <thead>
@@ -387,10 +411,10 @@ $logsQuery = mysqli_query($conn, "
                                 <td>
                                     <?php if ((int)$u['id'] !== (int)$_SESSION['user_id']): ?>
                                         <a href="admin.php?delete_user=<?= $u['id'] ?>" class="btn-delete" onclick="return confirm('Are you sure you want to delete this user?')">
-                                            <i class="fas fa-trash-alt"></i> Delete User
+                                            <i class="fas fa-trash-alt"></i> Delete
                                         </a>
                                     <?php else: ?>
-                                        <span style="color: #64748b; font-style: italic; font-size: 0.8rem; font-weight: 600;">(Current Admin)</span>
+                                        <span style="color: #64748b; font-style: italic; font-size: 0.75rem;">(Current)</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -402,18 +426,17 @@ $logsQuery = mysqli_query($conn, "
 
         <!-- GLOBAL QUERY AUDIT LOG TABLE (SCROLLABLE) -->
         <div class="card-table">
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                     <i class="fas fa-list-alt text-primary"></i> Global System Query Audit Logs
                 </h3>
 
-                <!-- EXPORT TO CSV BUTTON -->
-                <a href="export_logs.php" style="background-color: #10b981; color: white; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                    <i class="fas fa-file-csv"></i> Export to CSV
+                <a href="export_logs.php" style="background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-file-csv"></i> Export CSV
                 </a>
             </div>
 
+            <p class="scroll-hint"><i class="fas fa-arrows-left-right"></i> Swipe left/right to view all columns</p>
             <div class="scrollable-table-wrapper logs-scroll">
                 <table>
                     <thead>
@@ -435,15 +458,15 @@ $logsQuery = mysqli_query($conn, "
                                         <?php if (!empty($log['username'])): ?>
                                             <strong><?= htmlspecialchars($log['username']) ?></strong>
                                         <?php else: ?>
-                                            <span style="background: #f1f5f9; color: #64748b; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                            <span style="background: #f1f5f9; color: #64748b; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                                                 <i class="fas fa-user-secret"></i> Guest
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                         <?= htmlspecialchars($log['natural_language']) ?>
                                     </td>
-                                    <td style="font-family: monospace; color: #2563eb; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <td style="font-family: monospace; color: #2563eb; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                         <?= htmlspecialchars($log['generated_sql']) ?>
                                     </td>
                                     <td><?= $log['created_at'] ?></td>
@@ -456,7 +479,7 @@ $logsQuery = mysqli_query($conn, "
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="6" style="text-align: center; color: #94a3b8;">No query logs recorded in system database.</td>
+                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">No query logs recorded in system database.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

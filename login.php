@@ -1,7 +1,7 @@
 <?php
 session_start();
 $host = 'localhost';
-$db = 'sqlg1_db';
+$db   = 'sqlg1_db';
 $user = 'root';
 $pass = '';
 
@@ -29,14 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userRecord = $stmt->fetch();
 
             if ($userRecord && password_verify($password, $userRecord['password'])) {
-                $_SESSION['user_id'] = $userRecord['id'];
+                $_SESSION['user_id']  = $userRecord['id'];
                 $_SESSION['username'] = $userRecord['username'];
                 $_SESSION['fullname'] = $userRecord['fullname'];
-                $_SESSION['role'] = $userRecord['role'] ?? 'user'; // I-save ang role sa session
+                $_SESSION['role']     = $userRecord['role'] ?? 'user';
 
                 // Role-based Redirection
                 if (isset($userRecord['role']) && $userRecord['role'] === 'admin') {
-                    header("Location: admin.php"); // o admin.php (depende sa ngalan sa imong admin file)
+                    header("Location: admin.php");
                 } else {
                     header("Location: dashboard.php");
                 }
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Log In - NL2SQL Workspace</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -68,10 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         body {
             display: flex;
-            height: 100vh;
+            min-height: 100vh;
             background: #f8fafc;
             color: #1e293b;
-            overflow: hidden;
         }
 
         .auth-brand {
@@ -171,11 +170,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-control {
             width: 100%;
-            padding: 12px 14px 12px 42px;
+            padding: 12px 14px 12px 40px;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-size: 0.95rem;
             outline: none;
+            box-sizing: border-box;
         }
 
         .form-control:focus {
@@ -222,14 +222,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
         }
 
+        /* Responsive Fix para sa CP / Mobile */
         @media (max-width: 900px) {
+            body {
+                overflow-y: auto;
+            }
+
             .auth-brand {
                 display: none;
             }
 
             .auth-container {
                 width: 100%;
-                height: 100%;
+                min-height: 100vh;
+                padding: 40px 24px; /* Gipagamyan aron moluag ang input text */
             }
         }
     </style>
@@ -262,19 +268,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Email or Username</label>
                 <div class="input-icon-wrap">
                     <i class="fas fa-user"></i>
-                    <input type="text" name="username" class="form-control" placeholder="Enter your username or email" required>
+                    <input type="text" name="username" class="form-control" placeholder="Username or email" required>
                 </div>
             </div>
 
-            <!-- PASSWORD FIELD WITH FORGOT LINK -->
+            <!-- Password Field with Toggle Eye -->
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <label style="font-size: 0.85rem; color: #475569; font-weight: 600;">Password</label>
+                    <label style="font-size: 0.85rem; color: #334155; font-weight: 600;">Password</label>
                     <a href="forgot_password.php" style="font-size: 0.8rem; color: #2563eb; text-decoration: none; font-weight: 500;">Forgot password?</a>
                 </div>
                 <div style="position: relative;">
-                    <i class="fas fa-lock" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                    <input type="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 10px 10px 10px 38px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem;">
+                    <i class="fas fa-lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                    <input type="password" name="password" id="loginPasswordInput" required placeholder="••••••••" 
+                           style="width: 100%; padding: 12px 42px 12px 40px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; outline: none;">
+                    <i class="fas fa-eye" id="loginPasswordToggle" 
+                       style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; cursor: pointer; padding: 4px;"></i>
                 </div>
             </div>
 
@@ -286,6 +295,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
+    <script>
+        const pwInput = document.getElementById('loginPasswordInput');
+        const pwToggle = document.getElementById('loginPasswordToggle');
+        if (pwInput && pwToggle) {
+            pwToggle.addEventListener('click', function () {
+                const isHidden = pwInput.type === 'password';
+                pwInput.type = isHidden ? 'text' : 'password';
+                pwToggle.classList.toggle('fa-eye');
+                pwToggle.classList.toggle('fa-eye-slash');
+            });
+        }
+    </script>
 </body>
 
 </html>
