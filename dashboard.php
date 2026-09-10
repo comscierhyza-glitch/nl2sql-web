@@ -1090,7 +1090,11 @@ if ($isLoggedIn && isset($conn)) {
 
             <div class="recent-history-box" style="padding-bottom: 130px;">
                 <?php if ($isLoggedIn): ?>
-                    <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 10px;">Recent History</h4>
+                    <!-- COLLAPSIBLE RECENT HISTORY HEADER -->
+                    <div onclick="toggleRecentHistory()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 6px 8px; margin-bottom: 8px; user-select: none; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <span style="font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">Recent History</span>
+                        <i id="historyChevronIcon" class="fas fa-chevron-down" style="font-size: 0.75rem; color: #64748b; transition: transform 0.25s ease;"></i>
+                    </div>
 
                     <!-- 👉 GIDUGANG KINI NGA WRAPPER NGA NAAY ID -->
                     <div id="recentHistoryContainer">
@@ -1829,6 +1833,39 @@ if ($isLoggedIn && isset($conn)) {
             document.querySelectorAll('.history-dropdown-menu').forEach(menu => {
                 menu.style.display = 'none';
             });
+        });
+        // ========================================================
+        // COLLAPSIBLE RECENT HISTORY CONTROLLER
+        // ========================================================
+        function toggleRecentHistory() {
+            const container = document.getElementById('recentHistoryContainer');
+            const icon = document.getElementById('historyChevronIcon');
+            if (!container || !icon) return;
+
+            // Susiha kon kasamtangan ba kining nakatago
+            const isHidden = container.style.display === 'none';
+
+            if (isHidden) {
+                container.style.display = 'block';
+                icon.style.transform = 'rotate(0deg)'; // Arrow pointing down (v)
+                localStorage.setItem('history_sidebar_state', 'open');
+            } else {
+                container.style.display = 'none';
+                icon.style.transform = 'rotate(-90deg)'; // Arrow pointing right (>)
+                localStorage.setItem('history_sidebar_state', 'closed');
+            }
+        }
+
+        // Hinumduman ang kataposang estado (Nakasirado ba o Naabli) inig reload
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedState = localStorage.getItem('history_sidebar_state');
+            const container = document.getElementById('recentHistoryContainer');
+            const icon = document.getElementById('historyChevronIcon');
+
+            if (savedState === 'closed' && container && icon) {
+                container.style.display = 'none';
+                icon.style.transform = 'rotate(-90deg)';
+            }
         });
     </script>
 </body>
