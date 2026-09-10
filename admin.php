@@ -65,7 +65,7 @@ $logsQuery = mysqli_query($conn, "
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>NL2SQL | System Administration Panel</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=2.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         * {
@@ -73,7 +73,8 @@ $logsQuery = mysqli_query($conn, "
         }
 
         body {
-            margin: 0;
+            margin: 0 !important;
+            padding: 0 !important;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8fafc;
             color: #1e293b;
@@ -182,7 +183,8 @@ $logsQuery = mysqli_query($conn, "
             font-size: 0.85rem;
         }
 
-        th, td {
+        th,
+        td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #f1f5f9;
@@ -245,7 +247,7 @@ $logsQuery = mysqli_query($conn, "
                 gap: 12px !important;
             }
 
-            .admin-header > div {
+            .admin-header>div {
                 width: 100% !important;
                 display: flex !important;
                 flex-wrap: wrap !important;
@@ -300,7 +302,8 @@ $logsQuery = mysqli_query($conn, "
                 min-width: 500px !important;
             }
 
-            th, td {
+            th,
+            td {
                 padding: 8px 10px !important;
                 font-size: 0.78rem !important;
             }
