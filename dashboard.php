@@ -236,7 +236,6 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
         // =========================================================================
         $sqlUpperTrim = strtoupper(trim($sql));
 
-        // Check kon DCL / Administrative command ba
         $isRestrictedDCL = (
             strpos($sqlUpperTrim, 'GRANT') === 0 ||
             strpos($sqlUpperTrim, 'REVOKE') === 0
@@ -251,25 +250,33 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
             strpos($sqlUpperTrim, '--') === 0
         );
 
-        // I-apply ang status ug operation override
         if ($isRestrictedDCL) {
-            $sql_command = "DCL / ADMIN";
+            // 1. Tabonan ang SQL aron dili mogawas ang executable GRANT command
+            $sql = "-- RESTRICTED: Administrative and privilege commands (GRANT, REVOKE) are blocked for security reasons.";
+            $detectedCommand   = "DCL / ADMIN";
+            $sql_command       = "DCL / ADMIN";
             $validation_status = "RESTRICTED";
-            $explanation = "Administrative and privilege commands (e.g., GRANT, REVOKE) are restricted for security reasons and fall outside the developer query scope.";
+            $isValid           = false;
+            $is_valid          = false;
+            $compLevel         = "N/A";
+            $compScore         = 0;
+            $badgeColor        = "#ea580c";
+            $explanation       = "Administrative and privilege commands (e.g., GRANT, REVOKE) are restricted for security reasons and fall outside the developer query scope.";
+            $autoExplanation   = $explanation;
         } elseif ($isBlockedOrNotice) {
-            $sql_command = "NONE";
+            $detectedCommand   = "NONE";
+            $sql_command       = "NONE";
             $validation_status = "INVALID";
-        }
-
-        $isValid = !$isBlockedOrNotice;
-
-        // Kon may warning o block, i-override ngadto sa N/A
-        if (!$isValid) {
-            $sql_command     = "NONE";
-            $compLevel       = "N/A";
-            $compScore       = 0;
-            $badgeColor      = "#64748b";
-            $autoExplanation = "No executable SQL query generated due to security or schema constraints.";
+            $isValid           = false;
+            $is_valid          = false;
+            $compLevel         = "N/A";
+            $compScore         = 0;
+            $badgeColor        = "#64748b";
+            $autoExplanation   = "No executable SQL query generated due to security or schema constraints.";
+        } else {
+            $isValid           = true;
+            $is_valid          = true;
+            $validation_status = "VALID";
         }
 
         // =========================================================================
@@ -287,14 +294,15 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
             }
 
             echo json_encode([
-                'success'      => true,
-                'sql'          => $sql,
-                'command'      => $sql_command,
-                'time'         => $executionTime,
-                'explanation'  => $autoExplanation,
-                'is_valid'     => $isValid,
-                'history_id'   => $historyId,
-                'user_prompt'  => trim($_POST['nl_query'] ?? $_POST['query'] ?? '')
+                'success'           => true,
+                'sql'               => $sql,
+                'command'           => $sql_command,
+                'time'              => $executionTime,
+                'explanation'       => $autoExplanation,
+                'is_valid'          => $isValid,
+                'validation_status' => $validation_status,
+                'history_id'        => $historyId,
+                'user_prompt'       => trim($_POST['nl_query'] ?? $_POST['query'] ?? '')
             ]);
             exit();
         }
