@@ -899,6 +899,20 @@ if ($isLoggedIn && isset($conn)) {
 ======================================================= */
         @media (max-width: 992px) {
 
+            body {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                overflow-x: hidden !important;
+            }
+
+            .gemini-main,
+            .main-content {
+                width: 100% !important;
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+
             /* 1. Himuong 1-Column ang Workspace Cards ug wagtangon ang dako nga haw-ang */
             .top-grid {
                 grid-template-columns: 1fr !important;
