@@ -98,7 +98,7 @@
     </div>
 
     <!-- RIGHT COLUMN CONTAINER -->
-    <div class="card" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px;">
+    <div class="card" id="sqlResultSection" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px;">
 
         <!-- Generated SQL Header -->
         <div class="sql-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">

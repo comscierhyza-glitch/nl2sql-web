@@ -1790,6 +1790,20 @@ if ($isLoggedIn && isset($conn)) {
 
                             historyContainer.insertBefore(wrapper, historyContainer.firstChild);
                         }
+                        // ========================================================
+                        // 9. MOBILE AUTO-SCROLL TO RESULT (SMOOTH SLIDE)
+                        // ========================================================
+                        if (window.innerWidth <= 992) {
+                            const resultCard = document.getElementById('sqlResultSection');
+                            if (resultCard) {
+                                setTimeout(() => {
+                                    resultCard.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'start'
+                                    });
+                                }, 150);
+                            }
+                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);
