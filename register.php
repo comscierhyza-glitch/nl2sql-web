@@ -271,7 +271,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Full Name</label>
                 <div class="input-icon-wrap">
                     <i class="fas fa-user"></i>
-                    <input type="text" name="fullname" class="form-control" placeholder="John Doe" required>
+                    <input type="text" name="fullname" class="form-control" placeholder="Enter your full name" required>
                 </div>
             </div>
 
@@ -279,7 +279,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Email Address</label>
                 <div class="input-icon-wrap">
                     <i class="fas fa-envelope"></i>
-                    <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
                 </div>
             </div>
 
@@ -287,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Username</label>
                 <div class="input-icon-wrap">
                     <i class="fas fa-at"></i>
-                    <input type="text" name="username" class="form-control" placeholder="johndoe" required>
+                    <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
                 </div>
             </div>
 
