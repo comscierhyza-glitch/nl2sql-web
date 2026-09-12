@@ -235,8 +235,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .auth-container {
                 width: 100%;
                 min-height: 100vh;
-                padding: 40px 24px; /* Gipagamyan aron moluag ang input text */
+                padding: 40px 24px;
+                /* Gipagamyan aron moluag ang input text */
             }
+        }
+
+        /* ========================================================
+   AUTO-HIDE PLACEHOLDER ON CLICK / FOCUS
+   ======================================================== */
+        input:focus::placeholder,
+        textarea:focus::placeholder {
+            color: transparent !important;
         }
     </style>
 </head>
@@ -280,10 +289,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div style="position: relative;">
                     <i class="fas fa-lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                    <input type="password" name="password" id="loginPasswordInput" required placeholder="••••••••" 
-                           style="width: 100%; padding: 12px 42px 12px 40px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; outline: none;">
-                    <i class="fas fa-eye" id="loginPasswordToggle" 
-                       style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; cursor: pointer; padding: 4px;"></i>
+                    <input type="password" name="password" id="loginPasswordInput" required placeholder="••••••••"
+                        style="width: 100%; padding: 12px 42px 12px 40px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; outline: none;">
+                    <i class="fas fa-eye" id="loginPasswordToggle"
+                        style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; cursor: pointer; padding: 4px;"></i>
                 </div>
             </div>
 
@@ -299,7 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const pwInput = document.getElementById('loginPasswordInput');
         const pwToggle = document.getElementById('loginPasswordToggle');
         if (pwInput && pwToggle) {
-            pwToggle.addEventListener('click', function () {
+            pwToggle.addEventListener('click', function() {
                 const isHidden = pwInput.type === 'password';
                 pwInput.type = isHidden ? 'text' : 'password';
                 pwToggle.classList.toggle('fa-eye');

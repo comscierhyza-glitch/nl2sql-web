@@ -238,6 +238,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 height: 100%;
             }
         }
+
+        /* ========================================================
+   AUTO-HIDE PLACEHOLDER ON CLICK / FOCUS
+   ======================================================== */
+        input:focus::placeholder,
+        textarea:focus::placeholder {
+            color: transparent !important;
+        }
     </style>
 </head>
 
