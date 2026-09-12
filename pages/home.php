@@ -163,6 +163,34 @@
                                         echo " with specific projected columns and custom aliases.";
                                     }
                                 }
+                            } elseif (strpos($upperSql, "UPDATE") === 0) {
+                                preg_match('/UPDATE\s+([a-zA-Z0-9_]+)/i', $sql, $upTable);
+                                preg_match('/SET\s+(.+?)(?:WHERE|;|$)/i', $sql, $setMatches);
+                                $setFields = trim($setMatches[1] ?? '', " \t\n\r,");
+                                echo "This query updates the <strong>" . ($upTable[1] ?? 'table') . "</strong> table, setting <code style='color: #2563eb;'>{$setFields}</code>";
+                                if (strpos($upperSql, "WHERE") !== false) {
+                                    preg_match('/WHERE\s+(.+?)(?:;|$)/i', $sql, $whereMatches);
+                                    $condition = trim($whereMatches[1] ?? '');
+                                    echo " for rows where <code style='color: #2563eb;'>{$condition}</code>.";
+                                } else {
+                                    echo " for <strong>every row</strong> in the table &mdash; no WHERE condition was specified.";
+                                }
+                            } elseif (strpos($upperSql, "DELETE") === 0) {
+                                preg_match('/DELETE\s+FROM\s+([a-zA-Z0-9_]+)/i', $sql, $delTable);
+                                $delTableName = $delTable[1] ?? 'table';
+                                if (strpos($upperSql, "WHERE") !== false) {
+                                    preg_match('/WHERE\s+(.+?)(?:;|$)/i', $sql, $whereMatches);
+                                    $condition = trim($whereMatches[1] ?? '');
+                                    echo "This query deletes rows from the <strong>{$delTableName}</strong> table where <code style='color: #2563eb;'>{$condition}</code>.";
+                                } else {
+                                    echo "This query deletes <strong>every row</strong> from the <strong>{$delTableName}</strong> table &mdash; no WHERE condition was specified.";
+                                }
+                            } elseif (strpos($upperSql, "INSERT") === 0) {
+                                preg_match('/INSERT\s+INTO\s+([a-zA-Z0-9_]+)/i', $sql, $insTable);
+                                preg_match('/\(([^)]+)\)\s*VALUES/i', $sql, $colMatches);
+                                $insColumns = trim($colMatches[1] ?? '');
+                                echo "This query inserts a new row into the <strong>" . ($insTable[1] ?? 'table') . "</strong> table";
+                                echo $insColumns !== '' ? " with values for <code style='color: #2563eb;'>{$insColumns}</code>." : ".";
                             } else {
                                 echo "Executes an enterprise-ready database operation based on your natural language input.";
                             }
@@ -171,6 +199,13 @@
                         }
                         ?>
                     </p>
+                </div>
+
+                <?php
+                $isWriteOpInitial = !empty($sql) && preg_match('/^\s*(UPDATE|DELETE|INSERT)\b/i', trim($sql));
+                ?>
+                <div id="writeOpWarningBanner" style="display: <?= $isWriteOpInitial ? 'flex' : 'none' ?>; align-items: center; gap: 8px; background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                    <i class="fas fa-triangle-exclamation"></i> Write Operation &mdash; this query modifies data. Review carefully before running it in production.
                 </div>
 
                 <!-- Metrics Row with Clean Dynamic Display -->

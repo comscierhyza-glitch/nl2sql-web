@@ -228,8 +228,47 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
                 } else {
                     $autoExplanation .= ".";
                 }
+            } elseif (strpos($sqlUpper, "UPDATE") === 0) {
+                preg_match('/UPDATE\s+([a-zA-Z0-9_]+)/i', $sql, $upTable);
+                $upTableName = $upTable[1] ?? 'database table';
+
+                preg_match('/SET\s+(.+?)(?:WHERE|;|$)/i', $sql, $setMatches);
+                $setFields = trim($setMatches[1] ?? '', " \t\n\r,");
+
+                $autoExplanation = "This query updates the <strong>{$upTableName}</strong> table, setting <code>" . htmlspecialchars($setFields) . "</code>";
+
+                if (strpos($sqlUpper, "WHERE") !== false) {
+                    preg_match('/WHERE\s+(.+?)(?:;|$)/i', $sql, $whereMatches);
+                    $condition = trim($whereMatches[1] ?? '');
+                    $autoExplanation .= " for rows where <code>" . htmlspecialchars($condition) . "</code>.";
+                } else {
+                    $autoExplanation .= " for <strong>every row</strong> in the table \u2014 no WHERE condition was specified.";
+                }
+            } elseif (strpos($sqlUpper, "DELETE") === 0) {
+                preg_match('/DELETE\s+FROM\s+([a-zA-Z0-9_]+)/i', $sql, $delTable);
+                $delTableName = $delTable[1] ?? 'database table';
+
+                if (strpos($sqlUpper, "WHERE") !== false) {
+                    preg_match('/WHERE\s+(.+?)(?:;|$)/i', $sql, $whereMatches);
+                    $condition = trim($whereMatches[1] ?? '');
+                    $autoExplanation = "This query deletes rows from the <strong>{$delTableName}</strong> table where <code>" . htmlspecialchars($condition) . "</code>.";
+                } else {
+                    $autoExplanation = "This query deletes <strong>every row</strong> from the <strong>{$delTableName}</strong> table \u2014 no WHERE condition was specified.";
+                }
+            } elseif (strpos($sqlUpper, "INSERT") === 0) {
+                preg_match('/INSERT\s+INTO\s+([a-zA-Z0-9_]+)/i', $sql, $insTable);
+                $insTableName = $insTable[1] ?? 'database table';
+
+                preg_match('/\(([^)]+)\)\s*VALUES/i', $sql, $colMatches);
+                $insColumns = trim($colMatches[1] ?? '');
+
+                $autoExplanation = "This query inserts a new row into the <strong>{$insTableName}</strong> table";
+                $autoExplanation .= $insColumns !== '' ? " with values for <code>" . htmlspecialchars($insColumns) . "</code>." : ".";
             }
         }
+
+        // Flag write/mutating operations so the UI can show an extra review cue
+        $isWriteOperation = (bool) preg_match('/^\s*(UPDATE|DELETE|INSERT)\b/i', trim($sql ?? ''));
 
         // =========================================================================
         // 2. SECURITY & SCHEMA VALIDATION CHECK (OVERRIDE IF BLOCKED / RESTRICTED)
@@ -300,9 +339,10 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
                 'time'              => $executionTime,
                 'explanation'       => $autoExplanation,
                 'is_valid'          => $isValid,
+                'is_write'          => $isWriteOperation && $isValid,
                 'validation_status' => $validation_status,
                 'history_id'        => $historyId,
-                'user_prompt'       => trim($_POST['nl_query'] ?? $_POST['query'] ?? '')
+                'user_prompt' => trim($_POST['nl_input'] ?? $_POST['nl_query'] ?? $_POST['query'] ?? '')
             ]);
             exit();
         }
@@ -1152,11 +1192,17 @@ if ($isLoggedIn && isset($conn)) {
             $remaining = max(0, 10 - $usedQueries);
             ?>
             <!-- GUEST NOTIFICATION BANNER -->
-            <div class="guest-banner">
+            <div class="guest-banner" style="flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px;">
                 <span>
                     <i class="fas fa-info-circle"></i>
                     <strong>Guest Mode:</strong> You have <strong><span id="guest-remaining-count"><?= $remaining ?></span>/10</strong> free queries left.
                     <a href="login.php">Log In</a> or <a href="register.php">Sign Up</a> to get unlimited queries.
+                </span>
+                <div style="width: 100%; height: 5px; background: rgba(0,0,0,0.08); border-radius: 999px; overflow: hidden;">
+                    <div id="guest-progress-bar" style="height: 100%; width: <?= ($remaining / 10) * 100 ?>%; background: #2563eb; border-radius: 999px; transition: width 0.3s ease;"></div>
+                </div>
+                <span style="font-size: 0.75rem; color: #64748b;">
+                    <i class="fas fa-circle-info"></i> Guest queries aren't saved to history &mdash; log in to keep a persistent record.
                 </span>
             </div>
         <?php endif; ?>
@@ -1744,12 +1790,23 @@ if ($isLoggedIn && isset($conn)) {
                             }
                         }
 
+                        // 5b. Show/hide the write-operation review banner
+                        const writeOpBanner = document.getElementById('writeOpWarningBanner');
+                        if (writeOpBanner) {
+                            writeOpBanner.style.display = data.is_write ? 'flex' : 'none';
+                        }
+
                         // 6. Decrement Guest Counter if active
                         const counterElem = document.getElementById('guest-remaining-count');
                         if (counterElem) {
                             let count = parseInt(counterElem.innerText);
                             if (count > 0) {
-                                counterElem.innerText = count - 1;
+                                count = count - 1;
+                                counterElem.innerText = count;
+                                const progressBar = document.getElementById('guest-progress-bar');
+                                if (progressBar) {
+                                    progressBar.style.width = (count / 10 * 100) + '%';
+                                }
                             }
                         }
 
