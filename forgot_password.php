@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 2. Hash new password & update database
                 $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
                 $updateStmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-                
+
                 if ($updateStmt) {
                     $updateStmt->bind_param("si", $hashedPassword, $userId);
                     if ($updateStmt->execute()) {
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 420px;
             padding: 35px 30px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
         .alert {
@@ -152,6 +152,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .btn-reset:hover {
             background: #1d4ed8;
+        }
+        input:focus::placeholder,
+        textarea:focus::placeholder {
+            color: transparent !important;
         }
     </style>
 </head>
