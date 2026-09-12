@@ -337,7 +337,7 @@ session_start();
             <span class="highlight-text">Structured SQL Queries</span>
         </h1>
         <p class="hero-desc">
-            Bridge the gap between plain English prompts and relational databases. Generate schema-aware, formatted queries across supported database dialects in real time.
+            Bridge the gap between natural language database query requests and relational databases. Generate schema-aware, formatted queries across supported database dialects in real time.
         </p>
         <div class="cta-group">
             <a href="dashboard.php" class="btn-primary-custom">
@@ -371,7 +371,7 @@ session_start();
                     </div>
                     <h3 class="feature-title">Multi-Dialect Support</h3>
                     <p class="feature-desc">
-                        Target standard SQL syntax and popular dialects including MySQL, MariaDB, and PostgreSQL without manual query restructuring.
+                        Target standard SQL syntax across MySQL/MariaDB, PostgreSQL, SQLite, and MS SQL Server without manual query restructuring.
                     </p>
                 </div>
             </div>
@@ -383,7 +383,7 @@ session_start();
                     </div>
                     <h3 class="feature-title">NLP Pipeline Inspection</h3>
                     <p class="feature-desc">
-                        Inspect linguistic normalization, extracted keywords, query intent classification, and query explanations transparently.
+                        Inspect the AI-standardized input, detected SQL operation, extracted tables and columns, and pipeline validation status transparently.
                     </p>
                 </div>
             </div>
@@ -519,7 +519,7 @@ session_start();
                     <div class="step-pill">1</div>
                     <h4 style="font-weight: 700; font-size: 1.05rem; color: #1e293b; margin-bottom: 6px;">Input & Schema</h4>
                     <p style="color: #64748b; font-size: 0.88rem; line-height: 1.5; margin: 0;">
-                        Type plain English requests and optionally bind your database `.sql` structure.
+                        Type natural language database query requests and optionally bind your database `.sql` structure.
                     </p>
                 </div>
             </div>
