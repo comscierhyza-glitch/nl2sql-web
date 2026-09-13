@@ -158,14 +158,15 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
 
         // Save Last NLP State to Session for UI display
         $_SESSION["last_nlp"] = [
-            "original_input"   => $originalInput,
-            "selected_dialect" => $_SESSION['selected_dialect'],
-            "ai_standardized"  => $nl_input,
-            "command"          => $sql_command,
-            "keywords"         => $keywords,
-            "parsed"           => $parsed,
-            "sql"              => $sql,
-            "time"             => $executionTime
+            "original_input"    => $originalInput,
+            "selected_dialect"  => $_SESSION['selected_dialect'],
+            "ai_standardized"   => $nl_input,
+            "command"           => $sql_command,
+            "keywords"          => $keywords,
+            "parsed"            => $parsed,
+            "sql"               => $sql,
+            "time"              => $executionTime,
+            "validation_status" => $validation_status ?? 'VALID'
         ];
 
         // =========================================================================
@@ -318,9 +319,12 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
             $validation_status = "VALID";
         }
 
-        // =========================================================================
+        // I-sync ang pinal nga status ngadto sa session
+        $_SESSION["last_nlp"]["validation_status"] = $validation_status;
+
+        // -------------------------------------------------------------------------
         // 3. AJAX JSON RESPONSE
-        // =========================================================================
+        // -------------------------------------------------------------------------
         if (isset($_POST['ajax'])) {
             header('Content-Type: application/json');
 
@@ -427,6 +431,7 @@ elseif (isset($_SESSION["last_nlp"])) {
     $sql_command = $lastNlp["command"] ?? 'SELECT';
     $keywords = $lastNlp["keywords"] ?? [];
     $parsed = $lastNlp["parsed"] ?? [];
+    $validation_status = $lastNlp["validation_status"] ?? 'VALID';
     $showNlpBreakdown = true;
 }
 
