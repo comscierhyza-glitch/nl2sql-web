@@ -387,21 +387,60 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             }
             $_SESSION['selected_dialect'] = $selectedDialect;
 
-            // 2. Re-detect Command from Loaded History SQL
+            // 2. Re-detect Command & Status from Loaded History SQL
             $sqlUpper = strtoupper(trim($sql));
-            if (strpos($sqlUpper, "CREATE") === 0) $sql_command = "CREATE TABLE";
-            elseif (strpos($sqlUpper, "ALTER") === 0) $sql_command = "ALTER TABLE";
-            elseif (strpos($sqlUpper, "DROP") === 0) $sql_command = "DROP TABLE";
-            elseif (strpos($sqlUpper, "INSERT") === 0) $sql_command = "INSERT";
-            elseif (strpos($sqlUpper, "UPDATE") === 0) $sql_command = "UPDATE";
-            elseif (strpos($sqlUpper, "DELETE") === 0) $sql_command = "DELETE";
-            elseif (preg_match('/\b(COUNT|SUM|AVG|MAX|MIN)\b/i', $sqlUpper) || strpos($sqlUpper, "GROUP BY") !== false) $sql_command = "AGGREGATE";
-            elseif (preg_match('/\b(JOIN|INNER JOIN|LEFT JOIN|RIGHT JOIN)\b/i', $sqlUpper)) $sql_command = "JOIN";
-            else $sql_command = "SELECT";
 
-            $showNlpBreakdown  = true;
-            $validation_status = "VALID"; 
-            $validation = ["status" => "VALID", "confidence" => 98];
+            $isRestrictedDCL = (
+                strpos($sqlUpper, 'GRANT') === 0 ||
+                strpos($sqlUpper, 'REVOKE') === 0 ||
+                strpos($sqlUpper, 'RESTRICTED:') !== false
+            );
+
+            $isBlockedOrInvalid = (
+                strpos($sqlUpper, 'BLOCKED') !== false ||
+                strpos($sqlUpper, 'ERROR:') !== false ||
+                strpos($sqlUpper, 'OUT OF SCHEMA SCOPE') !== false ||
+                strpos($sqlUpper, 'NO VALID SQL') !== false ||
+                strpos($sqlUpper, '--') === 0
+            );
+
+            if ($isRestrictedDCL) {
+                $sql_command       = "DCL / ADMIN";
+                $validation_status = "RESTRICTED";
+            } elseif ($isBlockedOrInvalid) {
+                $sql_command       = "NONE";
+                $validation_status = "INVALID";
+            } elseif (strpos($sqlUpper, "CREATE") === 0) {
+                $sql_command       = "CREATE TABLE";
+                $validation_status = "VALID";
+            } elseif (strpos($sqlUpper, "ALTER") === 0) {
+                $sql_command       = "ALTER TABLE";
+                $validation_status = "VALID";
+            } elseif (strpos($sqlUpper, "DROP") === 0) {
+                $sql_command       = "DROP TABLE";
+                $validation_status = "VALID";
+            } elseif (strpos($sqlUpper, "INSERT") === 0) {
+                $sql_command       = "INSERT";
+                $validation_status = "VALID";
+            } elseif (strpos($sqlUpper, "UPDATE") === 0) {
+                $sql_command       = "UPDATE";
+                $validation_status = "VALID";
+            } elseif (strpos($sqlUpper, "DELETE") === 0) {
+                $sql_command       = "DELETE";
+                $validation_status = "VALID";
+            } elseif (preg_match('/\b(COUNT|SUM|AVG|MAX|MIN)\b/i', $sqlUpper) || strpos($sqlUpper, "GROUP BY") !== false) {
+                $sql_command       = "AGGREGATE";
+                $validation_status = "VALID";
+            } elseif (preg_match('/\b(JOIN|INNER JOIN|LEFT JOIN|RIGHT JOIN)\b/i', $sqlUpper)) {
+                $sql_command       = "JOIN";
+                $validation_status = "VALID";
+            } else {
+                $sql_command       = "SELECT";
+                $validation_status = "VALID";
+            }
+
+            $showNlpBreakdown = true;
+            $validation = ["status" => $validation_status, "confidence" => ($validation_status === 'VALID' ? 98 : 0)];
             $keywords = ["Operation" => $sql_command, "Target" => "Loaded from Permanent History"];
             $parsed = ["command" => $sql_command, "tables" => ["auto"], "columns" => ["*"]];
 
@@ -415,7 +454,7 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
                 "parsed"            => $parsed,
                 "sql"               => $sql,
                 "time"              => 0,
-                "validation_status" => "VALID" // 
+                "validation_status" => $validation_status
             ];
         }
         $stmt->close();
