@@ -429,14 +429,25 @@ $logsQuery = mysqli_query($conn, "
 
         <!-- GLOBAL QUERY AUDIT LOG TABLE (SCROLLABLE) -->
         <div class="card-table">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-list-alt text-primary"></i> Global System Query Audit Logs
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0; font-size: 1.15rem; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-table-list"></i> Global System Query Audit Logs
                 </h3>
 
-                <a href="export_logs.php" style="background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-file-csv"></i> Export CSV
-                </a>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <!-- SEARCH BAR INPUT -->
+                    <div style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+                        <input type="text" id="auditSearchInput" placeholder="Search ID, user, SQL..."
+                            style="padding: 7px 12px 7px 32px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; width: 230px; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+                    </div>
+
+                    <!-- Daang Export CSV Button -->
+                    <a href="export_logs.php" class="btn btn-success" style="padding: 7px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </a>
+                </div>
             </div>
 
             <p class="scroll-hint"><i class="fas fa-arrows-left-right"></i> Swipe left/right to view all columns</p>
@@ -452,7 +463,7 @@ $logsQuery = mysqli_query($conn, "
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="auditTableBody">
                         <?php if (mysqli_num_rows($logsQuery) > 0): ?>
                             <?php while ($log = mysqli_fetch_assoc($logsQuery)): ?>
                                 <tr>
@@ -491,6 +502,21 @@ $logsQuery = mysqli_query($conn, "
         </div>
 
     </div>
+
+    <script>
+        const searchInput = document.getElementById('auditSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const filter = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#auditTableBody tr');
+
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
+            });
+        }
+    </script>
 
 </body>
 
