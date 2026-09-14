@@ -399,21 +399,23 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             elseif (preg_match('/\b(JOIN|INNER JOIN|LEFT JOIN|RIGHT JOIN)\b/i', $sqlUpper)) $sql_command = "JOIN";
             else $sql_command = "SELECT";
 
-            $showNlpBreakdown = true;
+            $showNlpBreakdown  = true;
+            $validation_status = "VALID"; 
             $validation = ["status" => "VALID", "confidence" => 98];
             $keywords = ["Operation" => $sql_command, "Target" => "Loaded from Permanent History"];
             $parsed = ["command" => $sql_command, "tables" => ["auto"], "columns" => ["*"]];
 
             // 3. Save to Session for Pipeline Breakdown
             $_SESSION["last_nlp"] = [
-                "original_input"   => $originalInput,
-                "selected_dialect" => $selectedDialect,
-                "ai_standardized"  => $originalInput,
-                "command"          => $sql_command,
-                "keywords"         => $keywords,
-                "parsed"           => $parsed,
-                "sql"              => $sql,
-                "time"             => 0
+                "original_input"    => $originalInput,
+                "selected_dialect"  => $selectedDialect,
+                "ai_standardized"   => $originalInput,
+                "command"           => $sql_command,
+                "keywords"          => $keywords,
+                "parsed"            => $parsed,
+                "sql"               => $sql,
+                "time"              => 0,
+                "validation_status" => "VALID" // 
             ];
         }
         $stmt->close();
