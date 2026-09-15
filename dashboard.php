@@ -1324,7 +1324,7 @@ if ($isLoggedIn && isset($conn)) {
 
                 <ul style="padding-left: 20px; margin-bottom: 16px;">
                     <li style="margin-bottom: 10px;">
-                        <strong>Multi-LLM Fallback Processing:</strong> Translates natural language into dialect-specific SQL syntax using a resilient multi-provider engine (OpenRouter, Groq, and Gemini) to mitigate service downtime.
+                        <strong>Multi-LLM Fallback Processing:</strong> Translates natural language into dialect-specific SQL syntax using a resilient multi-provider engine (OpenRouter, Gemini, and Groq) to mitigate service downtime.
                     </li>
                     <li style="margin-bottom: 10px;">
                         <strong>Schema-Aware Context Mapping:</strong> Dynamically validates and binds user prompts against imported database schemas to enhance relational mapping and table recognition.
