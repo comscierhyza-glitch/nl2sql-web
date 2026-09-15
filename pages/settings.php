@@ -141,7 +141,7 @@ $activeDialect = $_SESSION['selected_dialect'] ?? 'MySQL';
             <!-- 5. SUBMIT BUTTON -->
             <div style="display: flex; justify-content: flex-end;">
                 <button type="submit" name="update_profile" style="background: #2563eb; color: white; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); transition: all 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-                    <i class="fas fa-save"></i> Save Changes
+                    <i class="fas fa-pen-to-square"></i> Update Settings
                 </button>
             </div>
 
