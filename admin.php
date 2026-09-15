@@ -429,22 +429,26 @@ $logsQuery = mysqli_query($conn, "
 
         <!-- GLOBAL QUERY AUDIT LOG TABLE (SCROLLABLE) -->
         <div class="card-table">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
                 <h3 style="margin: 0; font-size: 1.15rem; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-table-list"></i> Global System Query Audit Logs
+                    <i class="fas fa-table-list" style="color: #2563eb;"></i> Global System Query Audit Logs
                 </h3>
 
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
                     <!-- SEARCH BAR INPUT -->
-                    <div style="position: relative;">
-                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <i class="fas fa-search" style="position: absolute; left: 12px; color: #94a3b8; font-size: 0.85rem; pointer-events: none;"></i>
                         <input type="text" id="auditSearchInput" placeholder="Search ID, user, SQL..."
-                            style="padding: 7px 12px 7px 32px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; width: 230px; transition: border-color 0.2s;"
-                            onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+                            style="padding: 8px 14px 8px 34px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; width: 250px; background-color: #ffffff; color: #1e293b; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
+                            onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)';"
+                            onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';">
                     </div>
 
-                    <!-- Daang Export CSV Button -->
-                    <a href="export_logs.php" class="btn btn-success" style="padding: 7px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                    <!-- EXPORT CSV BUTTON (RESTORED GREEN BUTTON) -->
+                    <a href="export_logs.php"
+                        style="background-color: #10b981; color: #ffffff; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(16,185,129,0.25);"
+                        onmouseover="this.style.backgroundColor='#059669'; this.style.transform='translateY(-1px)';"
+                        onmouseout="this.style.backgroundColor='#10b981'; this.style.transform='translateY(0)';">
                         <i class="fas fa-file-csv"></i> Export CSV
                     </a>
                 </div>
