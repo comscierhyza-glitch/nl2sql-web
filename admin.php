@@ -48,7 +48,11 @@ $totalGuestQueries = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as 
 // -------------------------------------------------------------------------
 // 4. FETCH USERS & GLOBAL AUDIT LOGS
 // -------------------------------------------------------------------------
-$usersQuery = mysqli_query($conn, "SELECT id, username, email, role, created_at FROM users ORDER BY id DESC");
+$usersQuery = mysqli_query($conn, "SELECT u.id, u.username, u.email, u.role, u.created_at, MAX(q.created_at) AS last_activity 
+                                   FROM users u 
+                                   LEFT JOIN query_history q ON u.id = q.user_id 
+                                   GROUP BY u.id 
+                                   ORDER BY u.id DESC");
 
 $logsQuery = mysqli_query($conn, "
     SELECT q.id, q.natural_language, q.generated_sql, q.created_at, u.username 
@@ -397,6 +401,7 @@ $logsQuery = mysqli_query($conn, "
                             <th>Username</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -410,6 +415,29 @@ $logsQuery = mysqli_query($conn, "
                                     <span class="<?= $u['role'] === 'admin' ? 'badge-admin' : 'badge-user' ?>">
                                         <?= strtoupper($u['role'] ?? 'USER') ?>
                                     </span>
+                                </td>
+                                <?php
+                                $is_active = false;
+                                $threshold_days = 180;
+
+                                if (!empty($u['last_activity'])) {
+                                    $last_date = strtotime($u['last_activity']);
+                                    $days_ago = (time() - $last_date) / (60 * 60 * 24);
+                                    if ($days_ago <= $threshold_days) {
+                                        $is_active = true;
+                                    }
+                                }
+                                ?>
+                                <td>
+                                    <?php if ($is_active): ?>
+                                        <span style="background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block;">
+                                            ACTIVE
+                                        </span>
+                                    <?php else: ?>
+                                        <span style="background: #fce8e6; color: #c5221f; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block;">
+                                            INACTIVE
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ((int)$u['id'] !== (int)$_SESSION['user_id']): ?>
