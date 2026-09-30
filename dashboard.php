@@ -373,14 +373,14 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             $sql = $selectedHistory["generated_sql"];
 
             // 1. Detect or retrieve dialect from the loaded query
-            $selectedDialect = $selectedHistory['dialect'] ?? '';
+            // 1. Detect or retrieve dialect from the loaded query
+            $selectedDialect = $selectedHistory['dialect'] ?? $selectedHistory['target_dialect'] ?? '';
+
             if (empty($selectedDialect)) {
-                if (stripos($sql, 'EXTRACT(') !== false) {
-                    $selectedDialect = 'PostgreSQL';
-                } elseif (stripos($sql, 'AVG(') !== false && stripos($sql, 'INTERVAL') === false) {
-                    $selectedDialect = 'SQLite';
-                } elseif (preg_match('/\bCOUNT\s*\(\s*\*\s*\)\s+as\s+[a-zA-Z_]+\s+FROM/i', $sql) && stripos($sql, ';') === false) {
+                if (stripos($sql, 'TOP ') !== false) {
                     $selectedDialect = 'MS SQL Server';
+                } elseif (stripos($sql, 'EXTRACT(') !== false) {
+                    $selectedDialect = 'PostgreSQL';
                 } else {
                     $selectedDialect = 'MySQL / MariaDB';
                 }
