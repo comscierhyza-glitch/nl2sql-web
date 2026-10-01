@@ -25,6 +25,10 @@ if ($userRole !== 'admin') {
 if (isset($_GET['delete_user'])) {
     $delUserId = (int)$_GET['delete_user'];
     if ($delUserId !== $userId) {
+        // 1. Burahin muna ang query history ng user para maiwasan ang Foreign Key error
+        mysqli_query($conn, "DELETE FROM query_history WHERE user_id = $delUserId");
+
+        // 2. Isunod ang pagbura sa mismong user
         mysqli_query($conn, "DELETE FROM users WHERE id = $delUserId");
     }
     header("Location: admin.php");
