@@ -144,10 +144,11 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
         // SAVE DIREKTA SA MYSQL DATABASE (Para sa Logged-in ug Guest Users)
         if (isset($conn)) {
             $userId = $isLoggedIn ? (int)$_SESSION['user_id'] : null;
+            $dialectToSave = $_POST['dialect'] ?? $_SESSION['selected_dialect'] ?? 'MySQL / MariaDB';
 
-            $stmt = $conn->prepare("INSERT INTO query_history (user_id, natural_language, generated_sql) VALUES (?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO query_history (user_id, natural_language, generated_sql, dialect) VALUES (?, ?, ?, ?)");
             if ($stmt) {
-                $stmt->bind_param("iss", $userId, $originalInput, $sql);
+                $stmt->bind_param("isss", $userId, $originalInput, $sql, $dialectToSave);
                 $stmt->execute();
                 $stmt->close();
             }
@@ -373,7 +374,6 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             $sql = $selectedHistory["generated_sql"];
 
             // 1. Detect or retrieve dialect from the loaded query
-            // 1. Detect or retrieve dialect from the loaded query
             $selectedDialect = $selectedHistory['dialect'] ?? $selectedHistory['target_dialect'] ?? '';
 
             if (empty($selectedDialect)) {
@@ -385,6 +385,7 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
                     $selectedDialect = 'MySQL / MariaDB';
                 }
             }
+
             $_SESSION['selected_dialect'] = $selectedDialect;
 
             // 2. Re-detect Command & Status from Loaded History SQL
