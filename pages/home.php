@@ -4,6 +4,12 @@
     <!-- LEFT -->
     <div class="card">
 
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger" role="alert" style="margin-bottom: 20px; padding: 12px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px;">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+        <?php endif; ?>
+
         <!-- 📌 FIXED HEADER WITH CLEAR BUTTON -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-weight: 700; color: #1e293b; font-size: 1.1rem;">Natural Language Input</span>
@@ -275,7 +281,7 @@
 
 <!-- FLOATING TOAST NOTIFICATION (BOTTOM-RIGHT) -->
 <div id="executionToast" class="execution-time" style="display: none; position: fixed; bottom: 24px; right: 28px; z-index: 9999; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
-    <i id="toastIcon" class="fas fa-check-circle" style="font-size: 1rem;"></i> 
+    <i id="toastIcon" class="fas fa-check-circle" style="font-size: 1rem;"></i>
     <span id="toastText">Generated Successfully</span>
 </div>
 
