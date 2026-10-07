@@ -1,47 +1,56 @@
 <?php
 session_start();
 
+// Include the schema parser module
+require_once __DIR__ . '/modules/schema_parser.php';
+
 // Check if a file was actually uploaded
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
-    
+
     $file = $_FILES['schema_file'];
     $allowed_extensions = ['sql', 'txt'];
-    
-    // 1. Validate File Extension
-    $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($file_ext, $allowed_extensions)) {
-        die("Error: Invalid file format. Only .sql files are allowed.");
-    }
-    
-    // 2. Validate File Size (Limit to 2MB to prevent abuse)
-    if ($file['size'] > 2 * 1024 * 1024) {
-        die("Error: File is too large. Maximum size is 2MB.");
+
+    // 1. Validate Upload Errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        if ($file['error'] === UPLOAD_ERR_INI_SIZE) {
+            die("Error: File exceeds server upload limit. Please upload structure-only DDL.");
+        }
+        die("Error uploading file. Code: " . $file['error']);
     }
 
-    // 3. Read the file contents from the system's secure temp directory
+    // 2. Validate File Extension
+    $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($file_ext, $allowed_extensions)) {
+        die("Error: Invalid file format. Only .sql and .txt files are allowed.");
+    }
+
+    // 3. Validate File Size (Expanded to 50MB to handle large database dumps)
+    if ($file['size'] > 50 * 1024 * 1024) {
+        die("Error: File is too large. Maximum allowed size is 50MB.");
+    }
+
+    // 4. Read file content from temporary directory
     $tmp_path = $file['tmp_name'];
     $sql_content = file_get_contents($tmp_path);
 
     if ($sql_content !== false) {
-        
-        // 4. STRIP SENSITIVE DATA: Remove all INSERT statements using Regex
-        // This regex looks for "INSERT INTO" and removes everything until the semicolon
-        $clean_schema = preg_replace('/INSERT\s+INTO\s+.*?;/is', '', $sql_content);
-        
-        // Optional: Remove SQL comments to save AI token limits
-        $clean_schema = preg_replace('/--.*$/m', '', $clean_schema);
-        $clean_schema = preg_replace('/\/\*.*?\*\//s', '', $clean_schema);
-        
-        // Remove excess blank lines
-        $clean_schema = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $clean_schema);
 
-        // 5. Save the cleaned schema to the session for the AI Prompt to use
-        $_SESSION['schema'] = trim($clean_schema);
+        // 5. Parse tables, columns, primary keys, and foreign keys
+        $parsedSchema = parseSQLSchema($sql_content);
 
-        // NOTE: PHP automatically deletes the temp file after the script ends,
-        // so no need for manual unlink() when using $_FILES['tmp_name'].
+        if (empty($parsedSchema)) {
+            die("Error: No valid CREATE TABLE statements detected in the uploaded file.");
+        }
 
-        // Redirect back to dashboard with success message
+        // 6. Compress schema into ultra-compact format for AI token efficiency
+        $compactSchema = compressSchemaForAI($parsedSchema);
+
+        // 7. Store results in Session for the UI badges and AI Prompt
+        $_SESSION['schema'] = $compactSchema;
+        $_SESSION['parsed_schema_array'] = $parsedSchema;
+        $_SESSION['schema_filename'] = $file['name'];
+
+        // 8. Redirect back to dashboard with success message
         header("Location: dashboard.php?upload=success");
         exit;
     } else {

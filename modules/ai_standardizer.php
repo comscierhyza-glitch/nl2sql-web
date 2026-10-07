@@ -24,7 +24,15 @@ function standardizeInput($input)
     }
 
     $dialect = $_POST['dialect'] ?? $_SESSION['selected_dialect'] ?? 'MySQL';
-    $cacheKey = strtolower(preg_replace('/\s+/', ' ', $originalInput)) . "_" . strtolower($dialect);
+
+    // 1. Kuhaa ang unique signature sa aktibong schema
+    $schemaSignature = 'no_schema';
+    if (!empty($_SESSION['schema'])) {
+        $schemaSignature = md5(is_array($_SESSION['schema']) ? json_encode($_SESSION['schema']) : $_SESSION['schema']);
+    }
+
+    // 2. I-apil ang schema signature sa cache key
+    $cacheKey = strtolower(preg_replace('/\s+/', ' ', $originalInput)) . "_" . strtolower($dialect) . "_" . $schemaSignature;
 
     if (isset($_SESSION["ai_cache"][$cacheKey])) {
         $cachedSql = $_SESSION["ai_cache"][$cacheKey];

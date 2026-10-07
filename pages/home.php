@@ -72,6 +72,12 @@
                             <i class="fas fa-check-circle"></i> Schema Active: <strong><?= htmlspecialchars($_SESSION["schema_filename"] ?? 'Loaded') ?></strong>
                         </div>
 
+                        <?php if (!empty($_SESSION['parsed_schema_array'])): ?>
+                            <div style="font-size: 0.75rem; color: #065f46; background: #ecfdf5; padding: 6px 10px; border-radius: 6px; border: 1px solid #a7f3d0; margin-top: 6px; max-width: 90%; word-break: break-word;">
+                                <strong>Detected Tables:</strong> <?= htmlspecialchars(implode(', ', array_keys($_SESSION['parsed_schema_array']))) ?>
+                            </div>
+                        <?php endif; ?>
+
                         <!-- Redesigned Remove Button -->
                         <button type="submit" name="remove_schema" class="remove-schema-btn">
                             <i class="fas fa-trash-alt"></i> Remove Schema
