@@ -10,7 +10,8 @@ if (isset($_POST['remove_schema'])) {
 
 // Guard against uploads exceeding PHP core post_max_size directive
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-    die("Error: The uploaded file exceeds the server post_max_size directive in php.ini.");
+    header("Location: dashboard.php?error=" . urlencode("The uploaded file exceeds the server post_max_size directive (.user.ini)."));
+    exit;
 }
 
 require_once __DIR__ . '/modules/schema_parser.php';
@@ -19,21 +20,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
     $file = $_FILES['schema_file'];
     $allowed_extensions = ['sql', 'txt'];
 
-    // 1. Validate file upload errors
+   // 1. Validate file upload errors
     if ($file['error'] !== UPLOAD_ERR_OK) {
         if ($file['error'] === UPLOAD_ERR_INI_SIZE) {
-            die("Error: The file exceeds upload_max_filesize configured in php.ini.");
+            header("Location: dashboard.php?error=" . urlencode("The file exceeds the maximum upload limit configured in your server settings (.user.ini)."));
+            exit;
         }
         if ($file['error'] === UPLOAD_ERR_NO_FILE) {
-            die("Error: No file was selected for upload.");
+            header("Location: dashboard.php?error=" . urlencode("Please select a file before clicking upload."));
+            exit;
         }
-        die("Error uploading file. Status code: " . $file['error']);
+        header("Location: dashboard.php?error=" . urlencode("Error uploading file. Status code: " . $file['error']));
+        exit;
     }
 
-    // 2. Validate file extension
+   // 2. Validate file extension
     $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($file_ext, $allowed_extensions)) {
-        die("Error: Invalid file format. Only .sql and .txt files are allowed.");
+        header("Location: dashboard.php?error=" . urlencode("Invalid file format. Only .sql and .txt files are allowed."));
+        exit;
     }
 
     // 3. Read uploaded temporary file stream
@@ -43,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
         $parsedSchema = parseSQLSchema($sql_content);
 
         if (empty($parsedSchema)) {
-            die("Error: No valid CREATE TABLE statements detected in the uploaded file.");
+            header("Location: dashboard.php?error=" . urlencode("No valid CREATE TABLE statements detected in the uploaded file."));
+            exit;
         }
 
         $compactSchema = compressSchemaForAI($parsedSchema);
@@ -57,9 +63,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
         header("Location: dashboard.php?upload=success");
         exit;
     } else {
-        die("Error: Unable to read the uploaded file.");
+        header("Location: dashboard.php?error=" . urlencode("Unable to read the uploaded file."));
+        exit;
     }
 } else {
-    die("Error: No file uploaded.");
+    header("Location: dashboard.php?error=" . urlencode("No file was selected for upload."));
+    exit;
 }
 ?>
