@@ -62,7 +62,7 @@
 
             <p class="schema-subtitle">Enhance column & table recognition by uploading your structure.</p>
 
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" action="upload_schema.php" enctype="multipart/form-data">
                 <?php if (isset($_SESSION["schema"]) && !empty($_SESSION["schema"])): ?>
                     <!-- ACTIVE STATE -->
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -71,12 +71,6 @@
                         <div class="schema-badge-active">
                             <i class="fas fa-check-circle"></i> Schema Active: <strong><?= htmlspecialchars($_SESSION["schema_filename"] ?? 'Loaded') ?></strong>
                         </div>
-
-                        <?php if (!empty($_SESSION['parsed_schema_array'])): ?>
-                            <div style="font-size: 0.75rem; color: #065f46; background: #ecfdf5; padding: 6px 10px; border-radius: 6px; border: 1px solid #a7f3d0; margin-top: 6px; max-width: 90%; word-break: break-word;">
-                                <strong>Detected Tables:</strong> <?= htmlspecialchars(implode(', ', array_keys($_SESSION['parsed_schema_array']))) ?>
-                            </div>
-                        <?php endif; ?>
 
                         <!-- Redesigned Remove Button -->
                         <button type="submit" name="remove_schema" class="remove-schema-btn">
@@ -90,7 +84,7 @@
                         <label class="custom-file-label" for="sqlFileInput">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span id="fileLabelText">Choose SQL File</span>
-                            <input type="file" id="sqlFileInput" name="sql_file" accept=".sql" onchange="updateFileName(this)" />
+                            <input type="file" id="sqlFileInput" name="schema_file" accept=".sql" onchange="updateFileName(this)" />
                         </label>
 
                         <button type="submit" name="import_sql" class="schema-upload-btn">
@@ -280,20 +274,10 @@
 </div>
 
 <!-- FLOATING TOAST NOTIFICATION (BOTTOM-RIGHT) -->
-<?php if ($executionTime > 0): ?>
-    <?php
-    $sqlCheck = $generatedSql ?? $sql ?? $context['sql'] ?? '';
-    $isError = (strpos($sqlCheck, 'ERROR:') !== false);
-    ?>
-    <div class="execution-time" style="position: fixed; bottom: 24px; right: 28px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); <?= $isError ? 'background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;' : 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;' ?>">
-        <?php if ($isError): ?>
-            <i class="fas fa-times-circle" style="font-size: 1rem;"></i> Generation Failed • <?= $executionTime; ?> ms
-        <?php else: ?>
-            <i class="fas fa-check-circle" style="font-size: 1rem;"></i> Generated Successfully • <?= $executionTime; ?> ms
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
-
+<div id="executionToast" class="execution-time" style="display: none; position: fixed; bottom: 24px; right: 28px; z-index: 9999; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+    <i id="toastIcon" class="fas fa-check-circle" style="font-size: 1rem;"></i> 
+    <span id="toastText">Generated Successfully</span>
+</div>
 
 <!-- SUGGESTION -->
 

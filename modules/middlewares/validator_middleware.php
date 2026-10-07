@@ -20,37 +20,48 @@ function handleValidator(array &$context): bool
     }
 
     // -------------------------------------------------------------------------
-    // 1. UNIVERSAL EXTRACTION (SUGGESTED ALL DIALECT COMMANDS)
+    // 1. UNIVERSAL EXTRACTION & CLEANUP
     // -------------------------------------------------------------------------
+    // Strip markdown code fences
+    $sql = preg_replace('/```sql\n?|```\n?/i', '', $sql);
+    $sql = trim($sql);
+
     $allSqlKeywords = 'SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|USE|WITH|SHOW|EXPLAIN|DESCRIBE|GRANT|REVOKE|BEGIN|START|COMMIT|ROLLBACK|SAVEPOINT|EXEC|EXECUTE|CALL|PRAGMA|MERGE|VACUUM|COPY|DECLARE|SET|REINDEX|ANALYZE';
 
     if (preg_match('/(' . $allSqlKeywords . ')\b[\s\S]*/i', $sql, $extracted)) {
         $sql = trim($extracted[0]);
     }
 
-    // Strip markdown formatting symbols
-    $sql = preg_replace('/```sql\n?|```\n?/i', '', $sql);
-    $sql = trim($sql);
-
     // -------------------------------------------------------------------------
-    // 2. SECURITY CHECK: Multi-Statement Injection Shield (; stacked queries)
+    // 2. SMART MULTI-STATEMENT TOLERANCE (Dili sobra ka estrikto)
     // -------------------------------------------------------------------------
-    // I-trim ang trailing semicolons, spaces, newlines sa tumoy
-    $cleanForMulti = rtrim($sql, "; \t\n\r\0\x0B");
+    // Tangtanga ang mga text sulod sa single/double quotes aron dili masaypan ang ';' nga naa sulod sa data
+    $withoutQuotes = preg_replace("/'[^']*'|\"[^\"]*\"/", "''", $sql);
+    $cleanForMulti = rtrim($withoutQuotes, "; \t\n\r\0\x0B");
 
-    // Kon aduna pa'y natabilin nga semicolon SA TUNGA, actual multi-statement attack / multi-query kini!
-    if (strpos($cleanForMulti, ';') !== false) {
+    // Susiha kon aduna bay tinuod nga dangerous stacked query (sama sa ; DROP TABLE, ; DELETE FROM)
+    if (preg_match('/;\s*(DROP|DELETE\s+FROM|TRUNCATE|ALTER|UPDATE)\b/i', $cleanForMulti)) {
         $context["validation"] = [
-            "status" => "BLOCKED: Multi-Statement Injection",
+            "status" => "BLOCKED: Dangerous Multi-Statement Injection",
             "confidence" => 0,
-            "reason" => "Stacked queries using ';' are forbidden."
+            "reason" => "Destructive stacked query detected."
         ];
-        $context["sql"] = "-- BLOCKED BY SAFETY FIREWALL: Multi-statement query attempt detected.";
+        $context["sql"] = "-- BLOCKED BY SAFETY FIREWALL: Destructive multi-statement query attempt detected.";
         return false;
     }
 
+    // Kon naay ordinaryong semicolon sa tunga tungod kay sobraan og generate ang AI,
+    // kuhaa lamang ang UNANG STATEMENT imbes nga i-block dayon ang tibuok system!
+    if (strpos($cleanForMulti, ';') !== false) {
+        $parts = explode(';', $sql);
+        $firstQuery = trim($parts[0]);
+        if (!empty($firstQuery)) {
+            $sql = $firstQuery . ';';
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // 3. PASSED FIREWALL: Save cleaned SQL and pass to validator
+    // 3. PASSED FIREWALL: I-save ang SQL ug ipadayon
     // -------------------------------------------------------------------------
     $context["sql"] = $sql;
 

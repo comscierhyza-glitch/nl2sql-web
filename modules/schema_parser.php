@@ -1,100 +1,106 @@
 <?php
 
 /**
- * Robust SQL Schema Parser
- * Extracts table structures, primary keys, and foreign keys regardless of dialect or engine syntax.
+ * Robust, High-Performance SQL Schema Parser
+ * Efficiently processes large database dumps without memory overflows or PCRE backtracking crashes.
  */
 function parseSQLSchema($sql)
 {
     $schema = [];
 
-    // 1. Limpyohan daan ang comments ug INSERT statements
-    $sql = preg_replace('/--.*$/m', '', $sql);
-    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
-    $sql = preg_replace('/#.*$/m', '', $sql);
-    $sql = preg_replace('/INSERT\s+INTO\s+.*?;/is', '', $sql);
+    // 1. Process the SQL dump line-by-line to strip out heavy data rows and INSERT statements safely
+    $lines = explode("\n", $sql);
+    unset($sql); // Immediately release the raw dump from memory
 
-    // 2. Mas lig-on nga Regex: Mokuha sa CREATE TABLE bisan walay ENGINE= o naay IF NOT EXISTS
+    $cleanDdl = '';
+    $insideCreateTable = false;
+
+    foreach ($lines as $line) {
+        $trimmed = trim($line);
+
+        // Skip blank lines and standard single-line comments
+        if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#')) {
+            continue;
+        }
+
+        // Drop data-manipulation and table-locking statements to protect server memory
+        if (preg_match('/^(INSERT\s+INTO|UPDATE|DELETE|LOCK\s+TABLES|UNLOCK\s+TABLES|DROP\s+TABLE)/i', $trimmed)) {
+            continue;
+        }
+
+        // Detect the start of a CREATE TABLE block
+        if (preg_match('/CREATE\s+TABLE/i', $trimmed)) {
+            $insideCreateTable = true;
+        }
+
+        if ($insideCreateTable) {
+            $cleanDdl .= $line . "\n";
+            // Mark end of table definition upon hitting the closing statement semicolon
+            if (str_ends_with($trimmed, ';')) {
+                $insideCreateTable = false;
+            }
+        }
+    }
+    unset($lines); // Free line buffer from RAM
+
+    // 2. Extract CREATE TABLE definitions (supports backticks, IF NOT EXISTS, and schema qualifiers)
     preg_match_all(
-        '/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([a-zA-Z0-9_]+)`?\s*\((.*?)\)(?:\s*ENGINE=[^;]*|\s*DEFAULT\s+CHARSET=[^;]*|[^;]*);/is',
-        $sql,
+        '/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:`?[a-zA-Z0-9_]+`?\.)?`?([a-zA-Z0-9_]+)`?\s*\((.*?)\)\s*[^;]*;/is',
+        $cleanDdl,
         $matches,
         PREG_SET_ORDER
     );
-
-    // Fallback kon simple ra ang panapos nga semicolon
-    if (empty($matches)) {
-        preg_match_all(
-            '/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([a-zA-Z0-9_]+)`?\s*\((.*?)\);/is',
-            $sql,
-            $matches,
-            PREG_SET_ORDER
-        );
-    }
 
     foreach ($matches as $tableMatch) {
         $tableName = $tableMatch[1];
         $tableBody = $tableMatch[2];
 
         $schema[$tableName] = [
-            "columns" => [],
+            "columns"      => [],
             "primary_keys" => [],
             "foreign_keys" => []
         ];
 
-        $lines = preg_split('/\r\n|\r|\n/', $tableBody);
+        $bodyLines = preg_split('/\r\n|\r|\n/', $tableBody);
 
-        foreach ($lines as $line) {
-            $line = trim($line);
-            $line = rtrim($line, ",");
+        foreach ($bodyLines as $rawLine) {
+            $line = trim($rawLine);
+            $line = rtrim($line, ',');
 
-            if ($line === "") {
+            if ($line === '' || str_starts_with($line, '--') || str_starts_with($line, '/*')) {
                 continue;
             }
 
-            // PRIMARY KEY DETECTION
+            // Detect Primary Keys
             if (preg_match('/PRIMARY\s+KEY\s*\((.*?)\)/i', $line, $pkMatch)) {
-                $primaryKeys = explode(",", $pkMatch[1]);
-                foreach ($primaryKeys as $primaryKey) {
-                    $schema[$tableName]["primary_keys"][] = trim($primaryKey, "`'\" ");
+                $pkCols = explode(',', $pkMatch[1]);
+                foreach ($pkCols as $pk) {
+                    $cleanPk = trim($pk, "`'\" \t");
+                    if ($cleanPk !== '') {$schema[$tableName]["primary_keys"][] = $cleanPk;
+                    }
                 }
                 continue;
             }
 
-            // FOREIGN KEY DETECTION
-            if (
-                preg_match(
-                    '/FOREIGN\s+KEY\s*\(`?(\w+)`?\)\s+REFERENCES\s+`?(\w+)`?\s*\(`?(\w+)`?\)/i',
-                    $line,$fkMatch
-                )
-            ) {
+            // Detect Foreign Key Constraints
+            if (preg_match('/FOREIGN\s+KEY\s*\(`?([a-zA-Z0-9_]+)`?\)\s+REFERENCES\s+`?([a-zA-Z0-9_]+)`?\s*\(`?([a-zA-Z0-9_]+)`?\)/i', $line,$fkMatch)) {
                 $schema[$tableName]["foreign_keys"][] = [
-                    "column" => $fkMatch[1],
-                    "references" => $fkMatch[2],
+                    "column"           => $fkMatch[1],
+                    "references"       => $fkMatch[2],
                     "reference_column" => $fkMatch[3]
                 ];
                 continue;
             }
 
-            // IGNORE OTHER CONSTRAINTS
-            if (
-                stripos($line, "UNIQUE KEY") === 0 ||
-                stripos($line, "KEY ") === 0 ||
-                stripos($line, "CONSTRAINT") === 0 ||
-                stripos($line, "CHECK") === 0
-            ) {
+            // Skip index constraints and metadata keys
+            if (preg_match('/^(UNIQUE\s+KEY|KEY|INDEX|CONSTRAINT|CHECK|FULLTEXT|SPATIAL)\b/i', $line)) {
                 continue;
             }
 
-            // EXTRACT COLUMN NAME + DATA TYPE
-            if (
-                preg_match(
-                    '/^`?([a-zA-Z0-9_]+)`?\s+([a-zA-Z]+(?:\([^)]+\))?)/i',
-                    $line,$columnMatch
-                )
-            ) {
-                $columnName =$columnMatch[1];
-                $columnType = strtoupper($columnMatch[2]);
+            // Extract valid column name and data type
+            if (preg_match('/^`?([a-zA-Z0-9_]+)`?\s+([a-zA-Z]+(?:\([^)]+\))?)/i', $line,$colMatch)) {
+                $columnName =$colMatch[1];
+                $columnType = strtoupper($colMatch[2]);
 
                 $schema[$tableName]["columns"][$columnName] = [
                     "type" => $columnType
@@ -107,7 +113,7 @@ function parseSQLSchema($sql)
 }
 
 /**
- * I-compress ang schema ngadto sa compact format para dili mahurot ang AI tokens
+ * Compresses parsed database schema into a compact format optimized for AI context tokens.
  */
 function compressSchemaForAI($schemaArray)
 {

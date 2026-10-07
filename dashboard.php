@@ -1802,6 +1802,43 @@ if ($isLoggedIn && isset($conn)) {
                             }
                         }
 
+                        // Ipakita ang green toast badge inig human og generate sa AJAX
+                        const toast = document.getElementById('executionToast');
+                        const toastIcon = document.getElementById('toastIcon');
+                        const toastText = document.getElementById('toastText');
+
+                        if (toast) {
+                            const isError = data.sql && data.sql.includes('ERROR:');
+
+                            if (isError) {
+                                toast.style.background = '#fee2e2';
+                                toast.style.color = '#dc2626';
+                                toast.style.border = '1px solid #fca5a5';
+                                if (toastIcon) toastIcon.className = 'fas fa-times-circle';
+                                if (toastText) toastText.textContent = `Generation Failed • ${data.time || 0} ms`;
+                            } else {
+                                toast.style.background = '#ecfdf5';
+                                toast.style.color = '#059669';
+                                toast.style.border = '1px solid #a7f3d0';
+                                if (toastIcon) toastIcon.className = 'fas fa-check-circle';
+                                if (toastText) toastText.textContent = `Generated Successfully • ${data.time || 0} ms`;
+                            }
+
+                            toast.style.display = 'flex';
+                            toast.style.opacity = '1';
+                            toast.style.transform = 'translateY(0)';
+
+                            // Auto-dismiss pagkahuman sa 4 ka segundo
+                            setTimeout(() => {
+                                toast.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                                toast.style.opacity = '0';
+                                toast.style.transform = 'translateY(-4px)';
+                                setTimeout(() => {
+                                    toast.style.display = 'none';
+                                }, 600);
+                            }, 4000);
+                        }
+
                         // 2. Update Explanation text
                         const expElem = document.getElementById('queryExplanationText');
                         if (expElem && data.explanation) {
