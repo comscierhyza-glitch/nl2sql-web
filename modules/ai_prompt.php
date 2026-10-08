@@ -1,109 +1,49 @@
 <?php
 
-/**
 
- * Flexible & Developer-Friendly AI NL2SQL Prompt Generator
-
- * Handles dialect enforcement, dynamic schema binding, and smart reverse column resolution.
-
- */
 
 function getAISystemPrompt()
 
 {
 
-    // 0. Ensure session is started to safely access uploaded schema context
-
     if (session_status() === PHP_SESSION_NONE) {
 
         session_start();
+
     }
 
 
-
-    // 1. Retrieve Target Dialect from POST or Session (Default: MySQL)
 
     $dialect = $_POST['dialect'] ?? $_SESSION['selected_dialect'] ?? 'MySQL';
 
 
 
-    // 2. Persona, Developer Capabilities, and Clean Output Rules
+    $prompt = "You are an expert SQL assistant specializing in " . strtoupper($dialect) . ".\n";
 
-    $prompt = "You are an intelligent, developer-friendly AI SQL Assistant specializing in " . strtoupper($dialect) . ".\n";
+    $prompt .= "Translate the natural language input into a clean, valid, and executable SQL query. Return ONLY the raw SQL without markdown tags or explanations.\n\n";
 
-    $prompt .= "Your task is to translate natural language inquiries into clean, valid, executable SQL queries tailored for developers.\n\n";
+   
 
+    // Instruksyon para sa sakto nga pag-handle sa IDs ug Foreign Keys
 
+    $prompt .= "CRITICAL COLUMN & FILTER RULES:\n";
 
-    $prompt .= "--- GUIDELINES & CAPABILITIES ---\n";
+    $prompt .= "1. Pay close attention to foreign keys (like user_id, bus_no, etc.). If the user asks for records associated with a specific user ID or foreign reference, filter using that foreign key column (e.g., WHERE user_id = 3) instead of filtering by the table's primary key 'id'.\n";
 
-    $prompt .= "1. SUPPORT ALL SQL OPERATIONS: You are capable of generating any valid SQL statement, including:\n";
-
-    $prompt .= "   - DQL: SELECT, WITH\n";
-
-    $prompt .= "   - DML: INSERT, UPDATE, DELETE, REPLACE\n";
-
-    $prompt .= "   - DDL: CREATE, ALTER, DROP, TRUNCATE\n";
-
-    $prompt .= "   - Utility/Commands: SHOW, DESCRIBE, EXPLAIN\n";
-
-    $prompt .= "2. SYNTAX ADHERENCE: Strictly adhere to the syntax, date formats, and built-in functions native to " . strtoupper($dialect) . ".\n";
-
-    $prompt .= "3. OUTPUT FORMAT: Return ONLY the raw, executable SQL statement. Do NOT wrap with markdown tags (NO ```sql codeblocks) and do NOT include polite pleasantries or conversational filler.\n";
-
-    $prompt .= "4. SINGLE QUERY: Produce exactly one complete, standalone executable SQL statement per prompt.\n\n";
+    $prompt .= "2. When a user asks to 'list all expenses', 'show all records', or requests descriptions/details, use SELECT * or select all relevant descriptive columns rather than just returning an ID.\n\n";
 
 
 
-    // 3. Dialect-Specific Syntax Enforcement
+    if (isset($_SESSION["schema"]) && !empty($_SESSION["schema"])) {
 
-    $prompt .= "--- DIALECT CONVENTIONS (" . strtoupper($dialect) . ") ---\n";
+        $prompt .= "DATABASE SCHEMA:\n";
 
-    if (stripos($dialect, 'SQL Server') !== false || stripos($dialect, 'MSSQL') !== false) {
+        $prompt .= (is_array($_SESSION["schema"]) ? print_r($_SESSION["schema"], true) : $_SESSION["schema"]) . "\n\n";
 
-        $prompt .= "- Dialect: Microsoft SQL Server.\n";
-
-        $prompt .= "- Use 'SELECT TOP n ...' to limit records (never use LIMIT).\n";
-
-        $prompt .= "- Use '+' for string concatenation.\n\n";
-    } elseif (stripos($dialect, 'PostgreSQL') !== false) {
-
-        $prompt .= "- Dialect: PostgreSQL.\n";
-
-        $prompt .= "- Use 'LIMIT n' for row limits and '||' for string concatenation.\n";
-
-        $prompt .= "- Handle casing gracefully with standard identifier quotes if needed.\n\n";
-    } elseif (stripos($dialect, 'SQLite') !== false) {
-
-        $prompt .= "- Dialect: SQLite.\n";
-
-        $prompt .= "- Use 'LIMIT n' and '||' for string concatenation.\n\n";
-    } else {
-
-        // Default: MySQL / MariaDB
-
-        $prompt .= "- Dialect: MySQL / MariaDB.\n";
-
-        $prompt .= "- Use 'LIMIT n' for pagination or row limits (never use TOP).\n";
-
-        $prompt .= "- Use CONCAT(str1, str2) for string concatenation.\n\n";
     }
 
-
-
-    // 4. Dynamic Schema Injection & Smart Context Rules
-    $hasSchema = false;
-    if (isset($_SESSION["schema"])) {
-        if (is_array($_SESSION["schema"]) && !empty($_SESSION["schema"])) {
-            $hasSchema = true;
-            $prompt .= "\n--- ACTIVE DATABASE SCHEMA ---\n" . print_r($_SESSION["schema"], true) . "\n";
-        } elseif (is_string($_SESSION["schema"]) && !empty(trim($_SESSION["schema"]))) {
-            $hasSchema = true;
-            $prompt .= "\n--- ACTIVE DATABASE SCHEMA ---\n" . $_SESSION["schema"] . "\n";
-        }
-    }
-    $prompt .= "CRITICAL SCHEMA RULE: You MUST strictly use ONLY the exact table names, column names, and foreign key relations provided in the ACTIVE DATABASE SCHEMA above. NEVER invent, assume, or create tables (like 'buses') or columns (like 'type') that do not explicitly exist in the schema. If a requested table or column is missing, map it to the closest valid table/column present in the active schema.\n\n";
 
 
     return $prompt;
+
 }

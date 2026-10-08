@@ -43,7 +43,7 @@ $sql_command = "";
 $parsed = [];
 $keywords = [];
 $sql = "";
-$error = isset($_GET['error']) ? trim($_GET['error']) : "";
+$error = "";
 $suggestions = [];
 $executionTime = 0;
 $originalTokens = [];
@@ -58,10 +58,19 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
     $selectedDialect = $_POST['dialect'] ?? 'MySQL';
     $_SESSION['selected_dialect'] = $selectedDialect;
 
-    // 📌 GUEST 10-QUERY QUOTA GUARD
+    // 📌 GUEST QUOTA GUARD
     if (!$isLoggedIn) {
         $guestUsage = $_SESSION['guest_query_count'] ?? 0;
-        if ($guestUsage >= 10) {
+        if ($guestUsage >= 3) {
+            if (isset($_POST['ajax'])) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'quota_exceeded' => true,
+                    'sql' => '-- Guest query limit reached. Please log in or register.'
+                ]);
+                exit();
+            }
             header("Location: dashboard.php?quota_exceeded=1");
             exit();
         }
@@ -327,6 +336,9 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
         // 3. AJAX JSON RESPONSE
         // -------------------------------------------------------------------------
         if (isset($_POST['ajax'])) {
+            error_reporting(0);
+            ini_set('display_errors', 0);
+            if (ob_get_length()) ob_clean();
             header('Content-Type: application/json');
 
             // Retrieve the newly inserted query ID
@@ -374,18 +386,18 @@ elseif (isset($_GET['history_id']) && $isLoggedIn && isset($conn)) {
             $sql = $selectedHistory["generated_sql"];
 
             // 1. Detect or retrieve dialect from the loaded query
-            $selectedDialect = $selectedHistory['dialect'] ?? $selectedHistory['target_dialect'] ?? '';
-
+            $selectedDialect = $selectedHistory['dialect'] ?? '';
             if (empty($selectedDialect)) {
-                if (stripos($sql, 'TOP ') !== false) {
-                    $selectedDialect = 'MS SQL Server';
-                } elseif (stripos($sql, 'EXTRACT(') !== false) {
+                if (stripos($sql, 'EXTRACT(') !== false) {
                     $selectedDialect = 'PostgreSQL';
+                } elseif (stripos($sql, 'AVG(') !== false && stripos($sql, 'INTERVAL') === false) {
+                    $selectedDialect = 'SQLite';
+                } elseif (preg_match('/\bCOUNT\s*\(\s*\*\s*\)\s+as\s+[a-zA-Z_]+\s+FROM/i', $sql) && stripos($sql, ';') === false) {
+                    $selectedDialect = 'MS SQL Server';
                 } else {
                     $selectedDialect = 'MySQL / MariaDB';
                 }
             }
-
             $_SESSION['selected_dialect'] = $selectedDialect;
 
             // 2. Re-detect Command & Status from Loaded History SQL
@@ -1236,13 +1248,13 @@ if ($isLoggedIn && isset($conn)) {
         <?php if (!$isLoggedIn): ?>
             <?php
             $usedQueries = $_SESSION['guest_query_count'] ?? 0;
-            $remaining = max(0, 10 - $usedQueries);
+            $remaining = max(0, 3 - $usedQueries);
             ?>
             <!-- GUEST NOTIFICATION BANNER -->
             <div class="guest-banner" style="flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px;">
                 <span>
                     <i class="fas fa-info-circle"></i>
-                    <strong>Guest Mode:</strong> You have <strong><span id="guest-remaining-count"><?= $remaining ?></span>/10</strong> free queries left.
+                    <strong>Guest Mode:</strong> You have <strong><span id="guest-remaining-count"><?= $remaining ?></span>/3</strong> free queries left.
                     <a href="login.php">Log In</a> or <a href="register.php">Sign Up</a> to get unlimited queries.
                 </span>
                 <div style="width: 100%; height: 5px; background: rgba(0,0,0,0.08); border-radius: 999px; overflow: hidden;">
@@ -1361,7 +1373,7 @@ if ($isLoggedIn && isset($conn)) {
 
             <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 1.25rem; font-weight: 700;">Guest Limit Reached</h3>
             <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin: 0 0 22px 0;">
-                You have used all <strong>10 free queries</strong> for Guest Mode. Please create a free account to continue without limits.
+                You have used all <strong>3 free queries</strong> for Guest Mode. Please create a free account to continue without limits.
             </p>
 
             <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -1790,6 +1802,14 @@ if ($isLoggedIn && isset($conn)) {
                     })
                     .then(response => response.json())
                     .then(data => {
+
+                        if (data.quota_exceeded) {
+                            const quotaModal = document.getElementById('quotaModal');
+                            if (quotaModal) {
+                                quotaModal.style.display = 'flex';
+                            }
+                            return;
+                        }
                         // 1. Update SQL Output Box
                         if (data.sql && sqlOutput) {
                             if (sqlOutput.tagName.toLowerCase() === 'textarea') {
@@ -1889,7 +1909,7 @@ if ($isLoggedIn && isset($conn)) {
                                 counterElem.innerText = count;
                                 const progressBar = document.getElementById('guest-progress-bar');
                                 if (progressBar) {
-                                    progressBar.style.width = (count / 10 * 100) + '%';
+                                    progressBar.style.width = (count / 3 * 100) + '%';
                                 }
                             }
                         }
