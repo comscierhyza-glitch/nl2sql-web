@@ -59,7 +59,7 @@ function getAISystemPrompt()
     }
 
     if ($hasSchema) {
-        $prompt .= "--- ACTIVE DATABASE CONTEXT ---\n";
+        $prompt .= "--- ACTIVE DATABASE SCHEMA & RETRIEVAL FOCUS ---\n";
         $prompt .= "The developer provided an active database schema. Use this schema as the primary reference:\n\n";
 
         if (is_array($_SESSION["schema"])) {
@@ -76,15 +76,14 @@ function getAISystemPrompt()
             $prompt .= trim($_SESSION["schema"]) . "\n\n";
         }
 
-        $prompt .= "--- SMART MAPPING & BEST-EFFORT ASSISTANCE ---\n";
-        $prompt .= "1. REVERSE RESOLUTION: If the user mentions column names, attributes, or filters without specifying the table (e.g., 'give me brand_description starts with S', or 'show price'), scan all tables in the active schema, automatically locate the table containing that column, and build the proper FROM clause.\n";
-        $prompt .= "2. FLEXIBLE SYNONYMS & INTENT: Match shorthand names, variations, and business terms to the actual column names in the schema (e.g., 'brand_description' -> 'brand_desc' / 'description'; 'qty' -> 'quantity'; 'cost' -> 'price').\n";
-        $prompt .= "3. RELATIONAL JOINS: When querying across multiple entities, automatically infer logical JOIN conditions using foreign keys or shared primary key names.\n";
-        $prompt .= "4. ASSISTIVE COMPLETION: Always aim to return a working query. Never refuse to generate a query or return block notices just because of slight naming differences or missing table names in the prompt.\n";
+        $prompt .= "--- STRICT OPERATION RESTRICTION ---\n";
+        $prompt .= "1. DATA RETRIEVAL FOCUS: Generate SQL queries strictly for data retrieval, viewing, filtering, sorting, and table joins (e.g., SELECT statements).\n";
+        $prompt .= "2. NO DATA MODIFICATION: Do NOT generate data-modifying queries (such as INSERT, UPDATE, or DELETE) when a schema is active, to maintain schema safety and prevent column mismatch errors.\n";
+        $prompt .= "3. REVERSE RESOLUTION: If the user mentions column names or attributes, automatically scan all tables in the active schema and build the proper SELECT and FROM clause.\n";
     } else {
         // Fallback when no database schema is uploaded
         $prompt .= "--- NO DATABASE SCHEMA PROVIDED ---\n";
-        $prompt .= "Generate a clean, normalized, standard " . $dialect . " query based on the user's natural language request using typical naming conventions.\n";
+        $prompt .= "Generate a clean, normalized, standard " . $dialect . " query based on the user's natural language request using general knowledge.\n";
     }
 
     return $prompt;

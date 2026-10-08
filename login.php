@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $host = getenv('MYSQLHOST') ?: '127.0.0.1';
             $user = getenv('MYSQLUSER') ?: 'root';
             $pass = getenv('MYSQLPASSWORD') ?: '';
-            $db   = getenv('MYSQLDATABASE') ?: 'railway';
+            $db = getenv('MYSQLDATABASE') ?: 'sqlg1_db';
             $port = getenv('MYSQLPORT') ?: 3306;
 
             $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass);
@@ -267,6 +267,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Welcome Back</h2>
             <p>Please enter your details to sign in.</p>
         </div>
+
+        <?php if (isset($_GET['restricted']) && $_GET['restricted'] === 'upload'): ?>
+            <div class="alert alert-warning" style="background-color: #fff3cd; color: #856404; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffeeba; font-size: 14px;">
+                Database schema upload is restricted in Guest Mode. Please log in or register to use this feature.
+            </div>
+        <?php endif; ?>
 
         <?php if (!empty($error)): ?>
             <div class="alert-error"><?= htmlspecialchars($error) ?></div>

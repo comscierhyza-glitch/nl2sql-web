@@ -1,6 +1,11 @@
 <?php
 session_start();
 
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php?restricted=upload");
+    exit;
+}
+
 // Handle schema removal action
 if (isset($_POST['remove_schema'])) {
     unset($_SESSION['schema'], $_SESSION['parsed_schema_array'], $_SESSION['schema_filename'], $_SESSION['ai_cache']);
