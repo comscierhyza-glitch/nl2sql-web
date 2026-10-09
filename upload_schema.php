@@ -21,11 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && 
 
 require_once __DIR__ . '/modules/schema_parser.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
-    $file = $_FILES['schema_file'];
+// Dawata bisan 'schema_file' o 'sql_file' ang name sa input form
+$file = $_FILES['schema_file'] ?? $_FILES['sql_file'] ?? null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $file !== null) {
     $allowed_extensions = ['sql', 'txt'];
 
-   // 1. Validate file upload errors
+    // 1. Validate file upload errors
     if ($file['error'] !== UPLOAD_ERR_OK) {
         if ($file['error'] === UPLOAD_ERR_INI_SIZE) {
             header("Location: dashboard.php?error=" . urlencode("The file exceeds the maximum upload limit configured in your server settings (.user.ini)."));
@@ -39,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
         exit;
     }
 
-   // 2. Validate file extension
+    // 2. Validate file extension
     $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($file_ext, $allowed_extensions)) {
         header("Location: dashboard.php?error=" . urlencode("Invalid file format. Only .sql and .txt files are allowed."));
@@ -75,4 +77,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['schema_file'])) {
     header("Location: dashboard.php?error=" . urlencode("No file was selected for upload."));
     exit;
 }
-?>
