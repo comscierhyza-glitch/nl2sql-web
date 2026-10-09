@@ -78,15 +78,15 @@
                             <i class="fas fa-check-circle"></i> Schema Active: <strong><?= htmlspecialchars($_SESSION["schema_filename"] ?? 'Loaded') ?></strong>
                         </div>
 
-                        <div style="margin-top: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="fas fa-exclamation-triangle" style="color: #d97706;"></i>
-                            <span><strong>AI Schema Notice:</strong> Custom schemas may produce complex joins. Please review generated queries before execution.</span>
-                        </div>
-
                         <!-- Redesigned Remove Button -->
                         <button type="submit" name="remove_schema" class="remove-schema-btn">
                             <i class="fas fa-trash-alt"></i> Remove Schema
                         </button>
+
+                        <div style="margin-top: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-exclamation-triangle" style="color: #d97706;"></i>
+                            <span><strong>AI Schema Notice:</strong> Custom schemas may produce complex joins. Please review generated queries before execution.</span>
+                        </div>
 
                     </div>
                 <?php else: ?>
