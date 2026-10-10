@@ -4,12 +4,6 @@
     <!-- LEFT -->
     <div class="card">
 
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger" role="alert" style="margin-bottom: 20px; padding: 12px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px;">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
         <!-- 📌 FIXED HEADER WITH CLEAR BUTTON -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-weight: 700; color: #1e293b; font-size: 1.1rem;">Natural Language Input</span>
@@ -68,7 +62,7 @@
 
             <p class="schema-subtitle">Enhance column & table recognition by uploading your structure.</p>
 
-            <form method="POST" action="upload_schema.php" enctype="multipart/form-data">
+            <form method="POST" action="dashboard.php" enctype="multipart/form-data">
                 <?php if (isset($_SESSION["schema"]) && !empty($_SESSION["schema"])): ?>
                     <!-- ACTIVE STATE -->
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -78,15 +72,10 @@
                             <i class="fas fa-check-circle"></i> Schema Active: <strong><?= htmlspecialchars($_SESSION["schema_filename"] ?? 'Loaded') ?></strong>
                         </div>
 
-                        <!-- Redesigned Remove Button -->
+                        <!-- Remove Button -->
                         <button type="submit" name="remove_schema" class="remove-schema-btn">
                             <i class="fas fa-trash-alt"></i> Remove Schema
                         </button>
-
-                        <div style="margin-top: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="fas fa-exclamation-triangle" style="color: #d97706;"></i>
-                            <span><strong>AI Schema Notice:</strong> Custom schemas may produce complex joins. Please review generated queries before execution.</span>
-                        </div>
 
                     </div>
                 <?php else: ?>
@@ -95,7 +84,7 @@
                         <label class="custom-file-label" for="sqlFileInput">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span id="fileLabelText">Choose SQL File</span>
-                            <input type="file" id="sqlFileInput" name="schema_file" accept=".sql" onchange="updateFileName(this)" />
+                            <input type="file" id="sqlFileInput" name="sql_file" accept=".sql" onchange="updateFileName(this)" required />
                         </label>
 
                         <button type="submit" name="import_sql" class="schema-upload-btn">

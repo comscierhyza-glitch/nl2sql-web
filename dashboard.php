@@ -20,7 +20,8 @@ $userRole = 'user';
 // Guest Mode Schema Guard
 if (!$isLoggedIn) {
     unset($_SESSION['schema']);
-    unset($_SESSION['schema_name']);
+    unset($_SESSION['parsed_schema_array']);
+    unset($_SESSION['schema_filename']);
 }
 
 // Fetch User Role gikan sa MySQL Database
@@ -291,13 +292,9 @@ if (isset($_POST['generate']) || isset($_POST['nl_input'])) {
             strpos($sqlUpperTrim, 'REVOKE') === 0
         );
 
+        // Tinuod nga system error na lamang ang i-check (Gitangtang ang firewall ug comment blocking)
         $isBlockedOrNotice = (
-            strpos($sqlUpperTrim, 'BLOCKED BY SAFETY FIREWALL') !== false ||
-            strpos($sqlUpperTrim, 'ERROR:') !== false ||
-            strpos($sqlUpperTrim, 'OUT OF SCHEMA SCOPE') !== false ||
-            strpos($sqlUpperTrim, 'SYSTEM NOTICE') !== false ||
-            strpos($sqlUpperTrim, 'CAUSE DATA LOSS') !== false ||
-            strpos($sqlUpperTrim, '--') === 0
+            strpos($sqlUpperTrim, 'ERROR:') !== false
         );
 
         if ($isRestrictedDCL) {
@@ -489,21 +486,70 @@ elseif (isset($_SESSION["last_nlp"])) {
     $showNlpBreakdown = true;
 }
 
-// Handle Database Schema Import
+// =========================================================================
+// STEP 1, 2, & 3: SCHEMA IMPORT, PARSING, AND VERIFICATION PIPELINE
+// =========================================================================
 if (isset($_POST['import_sql'])) {
     if (!$isLoggedIn) {
         $error = "Guest users cannot import database schemas. Please log in to unlock this feature.";
     } else {
-        if (isset($_FILES['sql_file']) && $_FILES['sql_file']['error'] == 0) {
-            $extension = strtolower(pathinfo($_FILES['sql_file']['name'], PATHINFO_EXTENSION));
-            if ($extension == "sql") {
-                $uploadedSQL = file_get_contents($_FILES['sql_file']['tmp_name']);
-                $_SESSION["schema"] = parseSQLSchema($uploadedSQL);
-                $_SESSION["schema_filename"] = $_FILES["sql_file"]["name"];
-                $sql = "";
+        if (isset($_FILES['sql_file']) && $_FILES['sql_file']['error'] === UPLOAD_ERR_OK) {
+            $fileName      = $_FILES['sql_file']['name'];
+            $fileTmpPath   = $_FILES['sql_file']['tmp_name'];
+            $fileSize      = $_FILES['sql_file']['size'];
+            $extension     = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            // Step 1: File Validation Checks
+            if ($extension !== "sql") {
+                $error = "Invalid file type. Only '.sql' files are allowed.";
+            } elseif ($fileSize > (5 * 1024 * 1024)) {
+                $error = "File size exceeds the allowed 5MB limit.";
+            } elseif ($fileSize === 0) {
+                $error = "The uploaded .sql file is empty.";
             } else {
-                $error = "Please select a valid .sql file.";
+                $uploadedSQL = file_get_contents($fileTmpPath);
+
+                // =========================================================
+                // STEP 2: PARSE SQL SCHEMA METADATA
+                // =========================================================
+                $parsedSchema = parseSQLSchema($uploadedSQL);
+
+                // =========================================================
+                // STEP 3: SCHEMA VERIFICATION GATE
+                // =========================================================
+                // 1. Verify that valid table definitions were detected
+                if (empty($parsedSchema) || !is_array($parsedSchema)) {
+                    $error = "No valid CREATE TABLE statements detected in the uploaded file.";
+                } else {
+                    // 2. Count tables and extracted attributes to ensure metadata completeness
+                    $tableCount   = count($parsedSchema);
+                    $totalColumns = 0;
+
+                    foreach ($parsedSchema as $tableName => $tableData) {
+                        $totalColumns += count($tableData['columns'] ?? []);
+                    }
+
+                    // 3. Reject incomplete or corrupted table structures
+                    if ($totalColumns === 0) {
+                        $error = "Incomplete schema definition: No valid columns were parsed.";
+                    } else {
+                        // 4. Verification Passed: Commit schema context to session state
+                        $_SESSION["schema"]              = $parsedSchema;
+                        $_SESSION["parsed_schema_array"] = $parsedSchema;
+                        $_SESSION["schema_filename"]     = $fileName;
+                        $_SESSION["schema_table_count"]  = $tableCount;
+                        $_SESSION["schema_column_count"] = $totalColumns;
+
+                        // 5. Purge stale query cache to ensure clean AI evaluation
+                        unset($_SESSION['ai_cache']);
+
+                        $success = "Database schema verified successfully! ({$tableCount} tables, {$totalColumns} columns loaded).";
+                        $sql = "";
+                    }
+                }
             }
+        } else {
+            $error = "File upload failed. Please verify system permissions and try again.";
         }
     }
 }
@@ -511,7 +557,11 @@ if (isset($_POST['import_sql'])) {
 // Handle Remove Schema
 if (isset($_POST['remove_schema'])) {
     unset($_SESSION["schema"]);
+    unset($_SESSION["parsed_schema_array"]);
     unset($_SESSION["schema_filename"]);
+    unset($_SESSION["schema_table_count"]);
+    unset($_SESSION["schema_column_count"]);
+    unset($_SESSION['ai_cache']);
     header("Location: dashboard.php");
     exit();
 }
@@ -1295,6 +1345,12 @@ if ($isLoggedIn && isset($conn)) {
         </div>
 
         <div class="content-body">
+            <!-- SUCCESS DISPLAY -->
+            <?php if (!empty($success)): ?>
+                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-circle" style="color: #059669;"></i> <?= htmlspecialchars($success) ?>
+                </div>
+            <?php endif; ?>
             <!-- ERROR DISPLAY -->
             <?php if (!empty($error)): ?>
                 <div style="background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
